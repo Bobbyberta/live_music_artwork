@@ -64,12 +64,18 @@ class LiveMusicArtwork {
         // Troubleshooting
         this.troubleshootBtn = document.getElementById('troubleshootBtn');
         
+        // Color controls for beat background visualization
+        this.colorControls = document.getElementById('colorControls');
+        this.backgroundColorPicker = document.getElementById('backgroundColor');
+        this.beatColorPicker = document.getElementById('beatColor');
+        
         // Validate all elements exist
         const requiredElements = [
             this.startBtn, this.stopBtn, this.sensitivitySlider, 
             this.sensitivityValue, this.visualModeSelect, this.colorSchemeSelect,
             this.micStatus, this.audioLevel, this.fullscreenBtn, this.canvas,
-            this.troubleshootBtn
+            this.troubleshootBtn, this.colorControls, this.backgroundColorPicker,
+            this.beatColorPicker
         ];
         
         const missingElements = requiredElements.filter(element => !element);
@@ -94,15 +100,34 @@ class LiveMusicArtwork {
         
         // Visualization mode
         this.visualModeSelect.addEventListener('change', (e) => {
+            const mode = e.target.value;
+            
             if (this.visualizationEngine) {
-                this.visualizationEngine.setMode(e.target.value);
+                this.visualizationEngine.setMode(mode);
             }
+            
+            // Show/hide color controls based on mode
+            this.toggleColorControls(mode === 'beatbackground');
         });
         
         // Color scheme
         this.colorSchemeSelect.addEventListener('change', (e) => {
             if (this.visualizationEngine) {
                 this.visualizationEngine.setColorScheme(e.target.value);
+            }
+        });
+        
+        // Background color picker
+        this.backgroundColorPicker.addEventListener('input', (e) => {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setBackgroundColor(e.target.value);
+            }
+        });
+        
+        // Beat color picker
+        this.beatColorPicker.addEventListener('input', (e) => {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setBeatColor(e.target.value);
             }
         });
         
@@ -162,6 +187,15 @@ class LiveMusicArtwork {
             this.visualizationEngine = new VisualizationEngine(this.canvas);
             this.visualizationEngine.setMode(this.visualModeSelect.value);
             this.visualizationEngine.setColorScheme(this.colorSchemeSelect.value);
+            
+            // Set up color controls based on current mode
+            this.toggleColorControls(this.visualModeSelect.value === 'beatbackground');
+            
+            // If beat background mode, set the initial colors
+            if (this.visualModeSelect.value === 'beatbackground') {
+                this.visualizationEngine.setBackgroundColor(this.backgroundColorPicker.value);
+                this.visualizationEngine.setBeatColor(this.beatColorPicker.value);
+            }
             
             // Start audio processing with callback
             this.audioProcessor.addCallback((audioData) => {
@@ -314,8 +348,14 @@ class LiveMusicArtwork {
     }
 
     handleResize() {
-        // Handle any resize logic if needed
-        console.log('Window resized');
+        // Handle canvas resizing if needed
+        // The canvas size is managed by CSS, so this is mainly for future extensibility
+    }
+
+    toggleColorControls(show) {
+        if (this.colorControls) {
+            this.colorControls.style.display = show ? 'flex' : 'none';
+        }
     }
 
     showMessage(message) {
@@ -626,7 +666,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Available commands:');
         console.log('- liveMusicArtwork.start() - Start visualization');
         console.log('- liveMusicArtwork.stop() - Stop visualization');
-        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple)');
+        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple, beatbackground)');
         console.log('- liveMusicArtwork.setColorScheme(scheme) - Set colors (celtic, fire, ocean, sunset)');
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
         console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');

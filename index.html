@@ -28,6 +28,7 @@
                 <select id="visualMode">
                     <option value="audiotest">Audio Test</option>
                     <option value="simple">Simple Pulse</option>
+                    <option value="beatbackground">Beat Background</option>
                 </select>
             </div>
 
@@ -39,6 +40,13 @@
                     <option value="ocean">Ocean Blues</option>
                     <option value="sunset">Sunset</option>
                 </select>
+            </div>
+
+            <div class="control-group color-controls" id="colorControls" style="display: none;">
+                <label for="backgroundColor">Background Color:</label>
+                <input type="color" id="backgroundColor" value="#1a1a2e">
+                <label for="beatColor">Beat Color:</label>
+                <input type="color" id="beatColor" value="#ff6b6b">
             </div>
 
             <div class="control-group">
@@ -70,6 +78,7 @@
     </div>
 
     <script src="audio.js"></script>
+    <script src="beat-background.js"></script>
     <script src="visualizations.js"></script>
     <script src="app.js"></script>
 </body>

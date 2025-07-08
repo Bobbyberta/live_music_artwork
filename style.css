@@ -197,6 +197,44 @@ select option {
     color: #b0c4de;
 }
 
+/* Color picker controls */
+.color-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.color-controls label {
+    font-size: 14px;
+    color: #b0c4de;
+    margin-right: 5px;
+}
+
+input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(0, 255, 135, 0.3);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+input[type="color"]:hover {
+    border-color: #00ff87;
+    box-shadow: 0 0 10px rgba(0, 255, 135, 0.3);
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
 #sensitivityValue {
     color: #00ff87;
     font-weight: bold;

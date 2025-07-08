@@ -48,6 +48,9 @@ class VisualizationEngine {
         this.pulseColor = '#00ff87';
         this.particles = [];
         
+        // Beat background visualization instance
+        this.beatBackgroundViz = new BeatBackgroundVisualization();
+        
         // Initialize animation loop
         this.animate();
     }
@@ -80,6 +83,8 @@ class VisualizationEngine {
             this.renderAudioTest();
         } else if (this.currentMode === 'simple') {
             this.renderSimplePulse();
+        } else if (this.currentMode === 'beatbackground') {
+            this.renderBeatBackground();
         } else {
             this.renderIdle();
         }
@@ -557,5 +562,23 @@ class VisualizationEngine {
         this.ctx.fillStyle = '#60efff';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('Select a visualization mode', this.width/2, this.height/2);
+    }
+
+    renderBeatBackground() {
+        // Use the beat background visualization
+        this.beatBackgroundViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
+    }
+
+    // Methods to control beat background colors
+    setBackgroundColor(color) {
+        if (this.beatBackgroundViz) {
+            this.beatBackgroundViz.setBackgroundColor(color);
+        }
+    }
+
+    setBeatColor(color) {
+        if (this.beatBackgroundViz) {
+            this.beatBackgroundViz.setBeatColor(color);
+        }
     }
 } 
