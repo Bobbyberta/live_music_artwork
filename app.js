@@ -692,6 +692,8 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.setPulseSettings(options) - Set pulse size and smoothing');
         console.log('- liveMusicArtwork.setPulseColors(baseColor, pulseColor) - Set pulse colors');
         console.log('- liveMusicArtwork.resetPulse() - Reset pulse visualization');
+        console.log('- liveMusicArtwork.toggleDebugInfo(true/false) - Show/hide debug information');
+        console.log('- liveMusicArtwork.getDebugInfoState() - Check if debug info is currently shown');
         
         // Add debug methods to the instance
         window.liveMusicArtwork.debugAudio = function() {
@@ -918,6 +920,27 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         };
         
+        // Debug control methods
+        window.liveMusicArtwork.toggleDebugInfo = function(show) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.toggleDebugInfo(show);
+                console.log(`🐛 Debug info ${show ? 'enabled' : 'disabled'}`);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.getDebugInfoState = function() {
+            if (this.visualizationEngine) {
+                const state = this.visualizationEngine.getDebugInfoState();
+                console.log(`🐛 Debug info is currently ${state ? 'enabled' : 'disabled'}`);
+                return state;
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+                return false;
+            }
+        };
+        
         // Add helpful examples
         console.log('');
         console.log('🎛️ Dampening examples:');
@@ -962,7 +985,57 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.setPulseSettings({maxSize: 200, minSize: 80, smoothing: 0.15}) - Bigger, smoother pulse');
         console.log('- liveMusicArtwork.setPulseColors({r: 255, g: 0, b: 0}, {r: 0, g: 255, b: 0}) - Red to green pulse');
         console.log('- liveMusicArtwork.resetPulse() - Reset pulse to default');
+        console.log('');
+        console.log('🐛 Debug Control examples:');
+        console.log('- liveMusicArtwork.toggleDebugInfo(false) - Hide all debug information');
+        console.log('- liveMusicArtwork.toggleDebugInfo(true) - Show debug information');
+        console.log('- liveMusicArtwork.getDebugInfoState() - Check current debug state');
         
+        // Troubleshooting guide button
+        document.getElementById('troubleshootBtn').addEventListener('click', function() {
+            alert(`Audio Troubleshooting Guide:
+
+1. MICROPHONE PERMISSIONS
+   - Check browser microphone permissions
+   - Look for microphone icon in address bar
+   - Grant permission when prompted
+
+2. MICROPHONE SELECTION
+   - Try different audio input devices
+   - Check system microphone settings
+   - Ensure microphone is not muted
+
+3. AUDIO LEVELS
+   - Speak louder or move closer to microphone
+   - Check system audio input levels
+   - Try adjusting the sensitivity slider
+
+4. BROWSER COMPATIBILITY
+   - Chrome/Firefox work best
+   - Try refreshing the page
+   - Check browser console for errors
+
+5. COMMON ISSUES
+   - Close other apps using microphone
+   - Try in incognito/private mode
+   - Restart browser if needed
+
+The visualization needs audio input to work properly!`);
+        });
+        
+        // Debug toggle button
+        document.getElementById('debugToggleBtn').addEventListener('click', function() {
+            if (liveMusicArtwork.visualizationEngine) {
+                const currentState = liveMusicArtwork.visualizationEngine.getDebugInfoState();
+                const newState = !currentState;
+                liveMusicArtwork.visualizationEngine.toggleDebugInfo(newState);
+                
+                // Update button text
+                this.textContent = newState ? 'Hide Debug Info' : 'Show Debug Info';
+            }
+        });
+        
+        // Color control visibility
     } catch (error) {
         console.error('Failed to initialize Live Music Artwork:', error);
         alert('Failed to load application. Please refresh the page.');

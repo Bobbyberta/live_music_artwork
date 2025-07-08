@@ -58,6 +58,9 @@ class BalloonFloatVisualization {
         this.lastBeatDetected = false;
         this.lastPopInfo = null;
         
+        // Debug info toggle
+        this.showDebugInfo = true;
+        
         this.initializeBalloons();
     }
     
@@ -236,12 +239,15 @@ class BalloonFloatVisualization {
     }
     
     isBalloonVisible(balloon) {
-        // Check if balloon is within screen bounds with some margin
-        const margin = 50;
-        return balloon.x > -balloon.size - margin && 
-               balloon.x < this.bounds.width + balloon.size + margin &&
-               balloon.y > -balloon.size - margin && 
-               balloon.y < this.bounds.height + balloon.size + margin;
+        // Much more restrictive visibility check - balloons must be clearly on screen
+        // and not in the top third of the screen
+        const topThirdY = this.bounds.height / 3;
+        const margin = 20; // Smaller margin - balloons must be clearly visible
+        
+        return balloon.x > margin && 
+               balloon.x < this.bounds.width - margin &&
+               balloon.y > topThirdY && // Not in top third
+               balloon.y < this.bounds.height - margin; // Not at bottom edge
     }
     
     updateBalloons() {
@@ -349,11 +355,13 @@ class BalloonFloatVisualization {
         // Render idle balloons
         this.renderBalloons(ctx);
         
-        // Show idle message
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('🎈 Waiting for music...', width / 2, height / 2);
+        // Show idle message only when debug is enabled
+        if (this.showDebugInfo) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎈 Waiting for music...', width / 2, height / 2);
+        }
     }
     
     renderBalloons(ctx) {
@@ -375,40 +383,47 @@ class BalloonFloatVisualization {
             // Draw balloon shadow
             ctx.save();
             ctx.translate(wobbleX + 3, wobbleY + 3);
-            ctx.scale(1, 0.8);
+            ctx.scale(0.8, 1);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.beginPath();
-            ctx.arc(0, 0, balloon.size, 0, Math.PI * 2);
+            // Shadow balloon shape - wider at top, pinched at bottom
+            ctx.moveTo(0, -balloon.size);
+            ctx.bezierCurveTo(-balloon.size * 0.8, -balloon.size * 0.8, -balloon.size * 0.8, balloon.size * 0.2, -balloon.size * 0.3, balloon.size * 0.8);
+            ctx.bezierCurveTo(-balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.3, balloon.size * 0.8);
+            ctx.bezierCurveTo(balloon.size * 0.8, balloon.size * 0.2, balloon.size * 0.8, -balloon.size * 0.8, 0, -balloon.size);
             ctx.fill();
             ctx.restore();
             
             // Draw balloon
             ctx.translate(wobbleX, wobbleY);
-            ctx.scale(1, 0.8); // Slightly flattened
+            ctx.scale(0.8, 1); // Horizontally flattened (more natural balloon shape)
             
             // Balloon color based on music
             const hue = balloon.hue;
             const saturation = balloon.saturation * 100;
             const lightness = balloon.lightness * 100;
             
-            // Main balloon body
+            // Main balloon body - balloon shape (wider at top, pinched at bottom)
             ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
             ctx.beginPath();
-            ctx.arc(0, 0, balloon.size, 0, Math.PI * 2);
+            ctx.moveTo(0, -balloon.size);
+            ctx.bezierCurveTo(-balloon.size * 0.8, -balloon.size * 0.8, -balloon.size * 0.8, balloon.size * 0.2, -balloon.size * 0.3, balloon.size * 0.8);
+            ctx.bezierCurveTo(-balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.3, balloon.size * 0.8);
+            ctx.bezierCurveTo(balloon.size * 0.8, balloon.size * 0.2, balloon.size * 0.8, -balloon.size * 0.8, 0, -balloon.size);
             ctx.fill();
             
             // Balloon highlight
             ctx.fillStyle = `hsl(${hue}, ${saturation * 0.5}%, ${Math.min(95, lightness + 20)}%)`;
             ctx.beginPath();
-            ctx.arc(-balloon.size * 0.3, -balloon.size * 0.3, balloon.size * 0.25, 0, Math.PI * 2);
+            ctx.arc(-balloon.size * 0.3, -balloon.size * 0.4, balloon.size * 0.2, 0, Math.PI * 2);
             ctx.fill();
             
-            // Balloon tie (small triangle at bottom)
+            // Balloon tie (small triangle at bottom edge)
             ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness * 0.7}%)`;
             ctx.beginPath();
-            ctx.moveTo(0, balloon.size * 0.8);
-            ctx.lineTo(-3, balloon.size * 0.9);
-            ctx.lineTo(3, balloon.size * 0.9);
+            ctx.moveTo(0, balloon.size * 1.0);
+            ctx.lineTo(-3, balloon.size * 1.1);
+            ctx.lineTo(3, balloon.size * 1.1);
             ctx.closePath();
             ctx.fill();
             
@@ -420,7 +435,7 @@ class BalloonFloatVisualization {
         this.popEffects.forEach(effect => {
             const alpha = effect.life / effect.maxLife;
             
-            // Draw explosion particles
+            // Draw explosion particles only (no text)
             effect.particles.forEach(particle => {
                 const particleAlpha = (particle.life / 30) * alpha;
                 ctx.fillStyle = `rgba(255, 255, 0, ${particleAlpha})`;
@@ -428,18 +443,22 @@ class BalloonFloatVisualization {
                 ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
                 ctx.fill();
             });
-            
-            // Draw pop text
-            if (effect.life > 20) {
-                ctx.fillStyle = `rgba(255, 100, 100, ${alpha})`;
-                ctx.font = 'bold 20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('POP!', effect.x, effect.y);
-            }
         });
     }
     
     renderAudioInfo(ctx, audioData, width, height) {
+        if (!this.showDebugInfo) {
+            // Show only beat pop indicator when debug is hidden (no other text)
+            if (this.beatPopOccurred) {
+                ctx.fillStyle = 'rgba(255, 100, 100, 1.0)';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎈💥', width / 2, 50);
+            }
+            return;
+        }
+        
+        // Full debug info when enabled
         ctx.font = '14px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.textAlign = 'left';
@@ -551,5 +570,15 @@ class BalloonFloatVisualization {
     // Helper method to get current music speed for external access
     getCurrentMusicSpeed() {
         return this.currentMusicSpeed || this.calculateMusicSpeed();
+    }
+    
+    // Method to toggle debug information display
+    toggleDebugInfo(show) {
+        this.showDebugInfo = show;
+    }
+    
+    // Method to get current debug info state
+    getDebugInfoState() {
+        return this.showDebugInfo;
     }
 } 

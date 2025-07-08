@@ -665,4 +665,25 @@ class VisualizationEngine {
             this.simplePulseViz.reset();
         }
     }
+
+    // Methods to control debug information display
+    toggleDebugInfo(show) {
+        // Apply to balloon visualization
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.toggleDebugInfo(show);
+        }
+        
+        // Could be extended to other visualizations in the future
+        // if (this.leafPileViz) {
+        //     this.leafPileViz.toggleDebugInfo(show);
+        // }
+    }
+    
+    getDebugInfoState() {
+        // Get state from balloon visualization (or could be a global setting)
+        if (this.balloonFloatViz) {
+            return this.balloonFloatViz.getDebugInfoState();
+        }
+        return true; // Default to showing debug info
+    }
 } 
