@@ -278,6 +278,9 @@ class BalloonFloatVisualization {
             }
         }
         
+        // Check for overlapping balloons and pop one if 3+ overlap
+        this.checkBalloonOverlap();
+        
         // Spawn new balloons at bottom
         if (Math.random() < this.balloonSettings.spawnRate && 
             this.balloons.length < this.maxBalloons) {
@@ -298,6 +301,96 @@ class BalloonFloatVisualization {
             });
             return effect.life > 0;
         });
+    }
+    
+    checkBalloonOverlap() {
+        // Find groups of overlapping balloons
+        const overlappingGroups = [];
+        const processed = new Set();
+        
+        for (let i = 0; i < this.balloons.length; i++) {
+            if (processed.has(i)) continue;
+            
+            const balloon1 = this.balloons[i];
+            const group = [i];
+            
+            // Find all balloons that overlap with this one
+            for (let j = i + 1; j < this.balloons.length; j++) {
+                if (processed.has(j)) continue;
+                
+                const balloon2 = this.balloons[j];
+                if (this.balloonsOverlap(balloon1, balloon2)) {
+                    group.push(j);
+                }
+            }
+            
+            // If we found a group of 3+ overlapping balloons
+            if (group.length >= 3) {
+                overlappingGroups.push(group);
+                group.forEach(index => processed.add(index));
+            }
+        }
+        
+        // Pop one balloon from each group of 3+ overlapping balloons
+        overlappingGroups.forEach(group => {
+            // Select a random balloon from the group to pop
+            const randomIndex = Math.floor(Math.random() * group.length);
+            const balloonIndex = group[randomIndex];
+            const balloon = this.balloons[balloonIndex];
+            
+            // Create pop effect (same as beat response)
+            this.createPopEffect(balloon);
+            
+            // Remove the balloon
+            this.balloons.splice(balloonIndex, 1);
+            
+            // Adjust remaining indices in the group since we removed one
+            for (let i = 0; i < overlappingGroups.length; i++) {
+                for (let j = 0; j < overlappingGroups[i].length; j++) {
+                    if (overlappingGroups[i][j] > balloonIndex) {
+                        overlappingGroups[i][j]--;
+                    }
+                }
+            }
+        });
+    }
+    
+    balloonsOverlap(balloon1, balloon2) {
+        // Calculate distance between balloon centers
+        const dx = balloon1.x - balloon2.x;
+        const dy = balloon1.y - balloon2.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Check if balloons overlap (distance less than sum of their radii)
+        const minDistance = balloon1.size + balloon2.size;
+        return distance < minDistance * 0.8; // 80% overlap threshold for more realistic collision
+    }
+    
+    createPopEffect(balloon) {
+        // Create pop effect (same as beat response)
+        this.popEffects.push({
+            x: balloon.x,
+            y: balloon.y,
+            size: balloon.size,
+            particles: [],
+            life: 30,
+            maxLife: 30,
+            color: `hsl(${balloon.hue}, ${balloon.saturation * 100}%, ${balloon.lightness * 100}%)`
+        });
+        
+        // Create pop particles
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const speed = 2 + Math.random() * 4;
+            this.popEffects[this.popEffects.length - 1].particles.push({
+                x: balloon.x,
+                y: balloon.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: 3 + Math.random() * 5,
+                life: 20 + Math.random() * 10
+            });
+        }
     }
     
     render(ctx, audioData, time, width, height) {
@@ -337,20 +430,25 @@ class BalloonFloatVisualization {
     }
     
     renderIdleState(ctx, width, height) {
-        // Show fewer, slower balloons in idle state
-        if (this.balloons.length > 5) {
-            this.balloons = this.balloons.slice(0, 5);
-        }
-        
-        // Slow movement
-        this.balloons.forEach(balloon => {
+        // Update existing balloons (don't remove visible ones)
+        for (let i = this.balloons.length - 1; i >= 0; i--) {
+            const balloon = this.balloons[i];
+            
+            // Slow movement in idle state
             balloon.y -= 0.3;
             balloon.wobble += 0.01;
             
-            if (balloon.y < -balloon.size) {
-                balloon.y = height + balloon.size;
+            // Only remove balloons that are completely off screen
+            if (balloon.y < -balloon.size - 50) {
+                this.balloons.splice(i, 1);
             }
-        });
+        }
+        
+        // Limit spawning new balloons in idle state (but don't remove visible ones)
+        // Only spawn if we have very few balloons
+        if (Math.random() < 0.01 && this.balloons.length < 5) {
+            this.balloons.push(this.createBalloon());
+        }
         
         // Render idle balloons
         this.renderBalloons(ctx);
