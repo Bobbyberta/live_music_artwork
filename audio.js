@@ -221,7 +221,6 @@ class AudioProcessor {
             return;
         }
         
-        console.log('🔄 Starting audio analysis loop...');
         this.analyzeAudio();
         requestAnimationFrame(() => this.startAnalysis());
     }
@@ -240,21 +239,6 @@ class AudioProcessor {
         // Debug: Check if we're getting any data
         const dataSum = this.dataArray.reduce((sum, val) => sum + val, 0);
         const dataAverage = dataSum / this.dataArray.length;
-        
-        // Only log every 60 frames (roughly once per second at 60fps)
-        if (!this.debugCounter) this.debugCounter = 0;
-        this.debugCounter++;
-        
-        if (this.debugCounter % 60 === 0) {
-            console.log(`📊 Audio Data Debug:`, {
-                dataSum: dataSum,
-                dataAverage: dataAverage.toFixed(2),
-                dataArrayLength: this.dataArray.length,
-                firstFewValues: Array.from(this.dataArray.slice(0, 10)),
-                analyserConnected: !!this.analyser,
-                contextState: this.audioContext?.state
-            });
-        }
 
         // Calculate overall volume
         this.currentVolume = this.calculateVolume();
@@ -268,16 +252,7 @@ class AudioProcessor {
         // Detect beats/rhythm
         this.detectBeat();
         
-        // Debug: Log processed results occasionally
-        if (this.debugCounter % 60 === 0) {
-            console.log(`🎵 Processed Audio Results:`, {
-                volume: this.currentVolume?.toFixed(2),
-                dominantFreq: this.dominantFrequency?.toFixed(1),
-                bassEnergy: this.frequencyBins?.bass?.toFixed(2),
-                callbackCount: this.callbacks?.length || 0,
-                beatDetected: this.beatDetected
-            });
-        }
+        // Debug: Log processed results occasionally (removed for clean console)
         
         // Create audio data object
         const audioData = {
