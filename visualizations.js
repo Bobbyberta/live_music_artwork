@@ -51,6 +51,9 @@ class VisualizationEngine {
         // Beat background visualization instance
         this.beatBackgroundViz = new BeatBackgroundVisualization();
         
+        // Wind breeze visualization instance
+        this.windBreezeViz = new WindBreezeVisualization();
+        
         // Initialize animation loop
         this.animate();
     }
@@ -85,6 +88,8 @@ class VisualizationEngine {
             this.renderSimplePulse();
         } else if (this.currentMode === 'beatbackground') {
             this.renderBeatBackground();
+        } else if (this.currentMode === 'windbreeze') {
+            this.renderWindBreeze();
         } else {
             this.renderIdle();
         }
@@ -569,6 +574,11 @@ class VisualizationEngine {
         this.beatBackgroundViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
     }
 
+    renderWindBreeze() {
+        // Use the wind breeze visualization
+        this.windBreezeViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
+    }
+
     // Methods to control beat background colors
     setBackgroundColor(color) {
         if (this.beatBackgroundViz) {
@@ -601,5 +611,18 @@ class VisualizationEngine {
             return this.beatBackgroundViz.dampening;
         }
         return null;
+    }
+
+    // Methods to control wind breeze settings
+    setWindSettings(settings) {
+        if (this.windBreezeViz) {
+            this.windBreezeViz.setWindSettings(settings);
+        }
+    }
+
+    resetWindVisualization() {
+        if (this.windBreezeViz) {
+            this.windBreezeViz.reset();
+        }
     }
 } 

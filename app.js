@@ -666,7 +666,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Available commands:');
         console.log('- liveMusicArtwork.start() - Start visualization');
         console.log('- liveMusicArtwork.stop() - Stop visualization');
-        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple, beatbackground)');
+        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple, beatbackground, windbreeze)');
         console.log('- liveMusicArtwork.setColorScheme(scheme) - Set colors (celtic, fire, ocean, sunset)');
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
         console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');
@@ -674,6 +674,8 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.toggleDampening(enabled) - Enable/disable beat dampening');
         console.log('- liveMusicArtwork.setDampening(options) - Set dampening parameters');
         console.log('- liveMusicArtwork.getDampeningSettings() - Show current dampening settings');
+        console.log('- liveMusicArtwork.setWindSettings(options) - Set wind visualization parameters');
+        console.log('- liveMusicArtwork.resetWindVisualization() - Reset wind visualization');
         
         // Add debug methods to the instance
         window.liveMusicArtwork.debugAudio = function() {
@@ -740,6 +742,25 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         };
         
+        // Add wind control methods
+        window.liveMusicArtwork.setWindSettings = function(settings) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setWindSettings(settings);
+                console.log('🌬️ Wind settings updated:', settings);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.resetWindVisualization = function() {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.resetWindVisualization();
+                console.log('🌬️ Wind visualization reset');
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
         // Add helpful examples
         console.log('');
         console.log('🎛️ Dampening examples:');
@@ -747,6 +768,13 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.setDampening({maxIntensity: 0.5, decayRate: 0.9}) - Gentle flash');
         console.log('- liveMusicArtwork.setDampening({maxIntensity: 0.9, decayRate: 0.85}) - Strong flash');
         console.log('- liveMusicArtwork.setDampening({smoothingFactor: 0.05}) - Very smooth transitions');
+        console.log('');
+        console.log('🌬️ Wind examples:');
+        console.log('- liveMusicArtwork.setWindSettings({strength: 1.0, gentleness: 0.8}) - Gentle breeze');
+        console.log('- liveMusicArtwork.setWindSettings({strength: 2.0, gentleness: 0.5}) - Strong wind');
+        console.log('- liveMusicArtwork.setWindSettings({turbulence: 0.2, flowSpeed: 0.05}) - More chaotic');
+        console.log('- liveMusicArtwork.setWindSettings({smoothing: 0.02}) - Very smooth movement');
+        console.log('- liveMusicArtwork.resetWindVisualization() - Reset all particles');
         
     } catch (error) {
         console.error('Failed to initialize Live Music Artwork:', error);
