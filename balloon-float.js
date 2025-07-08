@@ -386,11 +386,7 @@ class BalloonFloatVisualization {
             ctx.scale(0.8, 1);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.beginPath();
-            // Shadow balloon shape - wider at top, pinched at bottom
-            ctx.moveTo(0, -balloon.size);
-            ctx.bezierCurveTo(-balloon.size * 0.8, -balloon.size * 0.8, -balloon.size * 0.8, balloon.size * 0.2, -balloon.size * 0.3, balloon.size * 0.8);
-            ctx.bezierCurveTo(-balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.3, balloon.size * 0.8);
-            ctx.bezierCurveTo(balloon.size * 0.8, balloon.size * 0.2, balloon.size * 0.8, -balloon.size * 0.8, 0, -balloon.size);
+            ctx.arc(0, 0, balloon.size, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
             
@@ -403,13 +399,10 @@ class BalloonFloatVisualization {
             const saturation = balloon.saturation * 100;
             const lightness = balloon.lightness * 100;
             
-            // Main balloon body - balloon shape (wider at top, pinched at bottom)
+            // Main balloon body
             ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
             ctx.beginPath();
-            ctx.moveTo(0, -balloon.size);
-            ctx.bezierCurveTo(-balloon.size * 0.8, -balloon.size * 0.8, -balloon.size * 0.8, balloon.size * 0.2, -balloon.size * 0.3, balloon.size * 0.8);
-            ctx.bezierCurveTo(-balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.1, balloon.size * 0.9, balloon.size * 0.3, balloon.size * 0.8);
-            ctx.bezierCurveTo(balloon.size * 0.8, balloon.size * 0.2, balloon.size * 0.8, -balloon.size * 0.8, 0, -balloon.size);
+            ctx.arc(0, 0, balloon.size, 0, Math.PI * 2);
             ctx.fill();
             
             // Balloon highlight
@@ -448,13 +441,7 @@ class BalloonFloatVisualization {
     
     renderAudioInfo(ctx, audioData, width, height) {
         if (!this.showDebugInfo) {
-            // Show only beat pop indicator when debug is hidden (no other text)
-            if (this.beatPopOccurred) {
-                ctx.fillStyle = 'rgba(255, 100, 100, 1.0)';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🎈💥', width / 2, 50);
-            }
+            // Show nothing when debug is hidden - completely clean visual
             return;
         }
         
