@@ -17,6 +17,20 @@ class BeatBackgroundVisualization {
         this.lastBeatTime = 0;
         this.beatFlashDuration = 300; // milliseconds
         
+        // Dampening controls for smoother transitions
+        this.dampening = {
+            enabled: true,
+            maxIntensity: 0.7,        // Maximum flash intensity (0.0 to 1.0)
+            smoothingFactor: 0.15,    // How quickly to approach target intensity (0.0 to 1.0)
+            minIntensity: 0.02,       // Minimum intensity before stopping flash
+            attackTime: 0.05,         // How quickly intensity rises on beat
+            decayRate: 0.88           // How quickly intensity fades (slower = more dampening)
+        };
+        
+        // Smoothed flash intensity for dampening
+        this.smoothedFlashIntensity = 0;
+        this.targetFlashIntensity = 0;
+        
         // Volume-based brightness
         this.volumeBrightness = 0;
         this.volumeSmoothing = 0.8;
@@ -34,6 +48,18 @@ class BeatBackgroundVisualization {
     setBeatColor(color) {
         this.beatColor = color;
         console.log(`🎨 Beat color set to: ${color}`);
+    }
+
+    // Set dampening controls
+    setDampening(options) {
+        this.dampening = { ...this.dampening, ...options };
+        console.log(`🎛️ Dampening updated:`, this.dampening);
+    }
+
+    // Enable/disable dampening
+    toggleDampening(enabled) {
+        this.dampening.enabled = enabled;
+        console.log(`🎛️ Dampening ${enabled ? 'enabled' : 'disabled'}`);
     }
 
     // Convert hex color to RGB values
@@ -95,7 +121,22 @@ class BeatBackgroundVisualization {
         // Handle beat detection
         if (beatDetected) {
             this.lastBeatTime = currentTime;
-            this.beatFlashIntensity = 1.0;
+            
+            if (this.dampening.enabled) {
+                // Use dampening - set target intensity and let smoothing handle the rest
+                this.targetFlashIntensity = this.dampening.maxIntensity;
+                
+                // Apply attack time for immediate response
+                this.smoothedFlashIntensity = Math.min(
+                    this.smoothedFlashIntensity + this.dampening.attackTime,
+                    this.targetFlashIntensity
+                );
+            } else {
+                // Original behavior without dampening
+                this.beatFlashIntensity = 1.0;
+                this.targetFlashIntensity = 1.0;
+                this.smoothedFlashIntensity = 1.0;
+            }
             
             // Add to beat history
             this.beatHistory.push(currentTime);
@@ -104,8 +145,27 @@ class BeatBackgroundVisualization {
             }
         }
 
-        // Update beat flash intensity (exponential decay)
-        this.beatFlashIntensity *= this.beatFlashDecay;
+        // Update flash intensity based on dampening settings
+        if (this.dampening.enabled) {
+            // Exponential decay for target intensity
+            this.targetFlashIntensity *= this.dampening.decayRate;
+            
+            // Smooth interpolation towards target
+            const difference = this.targetFlashIntensity - this.smoothedFlashIntensity;
+            this.smoothedFlashIntensity += difference * this.dampening.smoothingFactor;
+            
+            // Stop flash when below minimum intensity
+            if (this.smoothedFlashIntensity < this.dampening.minIntensity) {
+                this.smoothedFlashIntensity = 0;
+                this.targetFlashIntensity = 0;
+            }
+            
+            // Use smoothed intensity for color calculation
+            this.beatFlashIntensity = this.smoothedFlashIntensity;
+        } else {
+            // Original exponential decay without dampening
+            this.beatFlashIntensity *= this.beatFlashDecay;
+        }
         
         // Calculate time since last beat for additional effects
         const timeSinceLastBeat = currentTime - this.lastBeatTime;
@@ -153,6 +213,16 @@ class BeatBackgroundVisualization {
         ctx.fillText(`Frequency: ${dominantFreq.toFixed(1)} Hz`, 20, 50);
         ctx.fillText(`Note: ${dominantNote}`, 20, 70);
         
+        // Dampening info
+        if (this.dampening.enabled) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillText(`Dampening: ON (${(this.dampening.maxIntensity * 100).toFixed(0)}%)`, 20, 90);
+            ctx.fillText(`Flash Intensity: ${(this.beatFlashIntensity * 100).toFixed(1)}%`, 20, 110);
+        } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillText(`Dampening: OFF`, 20, 90);
+        }
+        
         // Beat indicator in top-right corner
         ctx.textAlign = 'right';
         if (timeSinceLastBeat < 500) {
@@ -191,6 +261,8 @@ class BeatBackgroundVisualization {
     // Reset visualization state
     reset() {
         this.beatFlashIntensity = 0;
+        this.smoothedFlashIntensity = 0;
+        this.targetFlashIntensity = 0;
         this.volumeBrightness = 0;
         this.beatHistory = [];
         this.lastBeatTime = 0;

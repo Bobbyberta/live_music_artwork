@@ -671,6 +671,9 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
         console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');
         console.log('- liveMusicArtwork.testMicrophone() - Test microphone access manually');
+        console.log('- liveMusicArtwork.toggleDampening(enabled) - Enable/disable beat dampening');
+        console.log('- liveMusicArtwork.setDampening(options) - Set dampening parameters');
+        console.log('- liveMusicArtwork.getDampeningSettings() - Show current dampening settings');
         
         // Add debug methods to the instance
         window.liveMusicArtwork.debugAudio = function() {
@@ -706,6 +709,44 @@ window.addEventListener('DOMContentLoaded', () => {
                 console.log('Error message:', error.message);
             }
         };
+        
+        // Add dampening control methods
+        window.liveMusicArtwork.toggleDampening = function(enabled) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.toggleDampening(enabled);
+                console.log(`🎛️ Dampening ${enabled ? 'enabled' : 'disabled'}`);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.setDampening = function(options) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setDampening(options);
+                console.log('🎛️ Dampening settings updated:', options);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.getDampeningSettings = function() {
+            if (this.visualizationEngine) {
+                const settings = this.visualizationEngine.getDampeningSettings();
+                console.log('🎛️ Current dampening settings:', settings);
+                return settings;
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+                return null;
+            }
+        };
+        
+        // Add helpful examples
+        console.log('');
+        console.log('🎛️ Dampening examples:');
+        console.log('- liveMusicArtwork.toggleDampening(true) - Enable dampening');
+        console.log('- liveMusicArtwork.setDampening({maxIntensity: 0.5, decayRate: 0.9}) - Gentle flash');
+        console.log('- liveMusicArtwork.setDampening({maxIntensity: 0.9, decayRate: 0.85}) - Strong flash');
+        console.log('- liveMusicArtwork.setDampening({smoothingFactor: 0.05}) - Very smooth transitions');
         
     } catch (error) {
         console.error('Failed to initialize Live Music Artwork:', error);

@@ -581,4 +581,25 @@ class VisualizationEngine {
             this.beatBackgroundViz.setBeatColor(color);
         }
     }
+
+    // Methods to control beat background dampening
+    setDampening(options) {
+        if (this.beatBackgroundViz) {
+            this.beatBackgroundViz.setDampening(options);
+        }
+    }
+
+    toggleDampening(enabled) {
+        if (this.beatBackgroundViz) {
+            this.beatBackgroundViz.toggleDampening(enabled);
+        }
+    }
+
+    // Get current dampening settings
+    getDampeningSettings() {
+        if (this.beatBackgroundViz) {
+            return this.beatBackgroundViz.dampening;
+        }
+        return null;
+    }
 } 
