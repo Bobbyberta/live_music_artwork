@@ -16,6 +16,7 @@ A real-time browser-based music visualization experience designed for ceilidh mu
 - **Adaptive sensitivity** for different environments
 
 ### 🎨 Dual Display Visualizations
+- **Audio Test Mode**: Simple debugging visualization showing volume meters, frequency ranges, and audio status - perfect for checking if sound is being detected
 - **Complementary Mode**: Each display shows different but harmonizing graphics with particles that travel between screens
 - **Mirror Mode**: Synchronized identical visualizations
 - **Reactive Mode**: Displays respond to different frequency ranges
@@ -84,8 +85,21 @@ A real-time browser-based music visualization experience designed for ceilidh mu
 ### Basic Operation
 1. Click **"Start Visualization"** to begin
 2. Allow microphone access when prompted
-3. Play music or speak near the microphone
-4. Watch as the visualizations respond to audio input
+3. **Use "Audio Test" mode first** to verify sound is being detected correctly
+4. Play music or speak near the microphone
+5. Watch as the visualizations respond to audio input
+
+### 🔧 Audio Test Mode
+Perfect for setup and troubleshooting:
+- **Large volume meter** shows overall audio levels
+- **Frequency range bars** for bass, mid, and high frequencies  
+- **Dominant frequency display** with musical note detection
+- **Beat detection indicator** flashes when rhythm is detected
+- **Audio history graph** shows recent volume levels
+- **Mini frequency spectrum** for detailed analysis
+- **Status indicators** show sensitivity, sample rate, and detection status
+
+**Use this mode to ensure your microphone is working before switching to artistic visualizations!**
 
 ### Controls
 - **Sensitivity Slider**: Adjust how responsive the visualizations are to audio (1 = less sensitive, 10 = very sensitive)

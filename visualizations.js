@@ -9,7 +9,7 @@ class VisualizationEngine {
         this.height = 600;
         this.isRunning = false;
         
-        this.mode = 'complementary';
+        this.mode = 'audiotest';
         this.colorScheme = 'celtic';
         this.audioData = null;
         
@@ -181,6 +181,9 @@ class VisualizationEngine {
         
         if (this.audioData) {
             switch (this.mode) {
+                case 'audiotest':
+                    this.renderAudioTest();
+                    break;
                 case 'complementary':
                     this.renderComplementary();
                     break;
@@ -256,6 +259,337 @@ class VisualizationEngine {
         
         // Hide bridge canvas in reactive mode
         this.hideBridgeCanvas();
+    }
+
+    renderAudioTest() {
+        // Simple audio testing visualization
+        if (this.audioData) {
+            this.renderAudioTestDisplay(this.ctx1, 1);
+            this.renderAudioTestDisplay(this.ctx2, 2);
+        } else {
+            this.renderAudioTestNoData(this.ctx1, 1);
+            this.renderAudioTestNoData(this.ctx2, 2);
+        }
+        
+        // Hide bridge canvas in test mode
+        this.hideBridgeCanvas();
+    }
+
+    renderAudioTestNoData(ctx, displayNum) {
+        const colors = this.colorSchemes[this.colorScheme];
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        
+        // Clear with solid background
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, this.width, this.height);
+        
+        // Title
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = colors.primary[0];
+        ctx.textAlign = 'center';
+        ctx.fillText(`Audio Test - Display ${displayNum}`, centerX, 40);
+        
+        // No data message
+        ctx.font = 'bold 32px Arial';
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText('NO AUDIO DATA', centerX, centerY - 50);
+        
+        ctx.font = '18px Arial';
+        ctx.fillStyle = colors.accent[0];
+        ctx.fillText('Click "Start Visualization" to begin audio testing', centerX, centerY);
+        
+        ctx.font = '16px Arial';
+        ctx.fillStyle = colors.secondary[0];
+        ctx.fillText('Make sure to allow microphone access when prompted', centerX, centerY + 40);
+        
+        // Status
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText('Status: WAITING FOR AUDIO INITIALIZATION', centerX, this.height - 40);
+    }
+
+    renderAudioTestDisplay(ctx, displayNum) {
+        const colors = this.colorSchemes[this.colorScheme];
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        
+        // Clear with solid background for better visibility
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, this.width, this.height);
+        
+        // Title
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = colors.primary[0];
+        ctx.textAlign = 'center';
+        ctx.fillText(`Audio Test - Display ${displayNum}`, centerX, 40);
+        
+        // Overall volume meter (large and prominent)
+        this.drawVolumeMeter(ctx, centerX, 80, colors);
+        
+        // Frequency range bars
+        this.drawFrequencyRanges(ctx, centerX, 200, colors);
+        
+        // Dominant frequency display
+        this.drawDominantFrequency(ctx, centerX, 320, colors);
+        
+        // Beat detection indicator
+        this.drawBeatIndicator(ctx, centerX, 380, colors);
+        
+        // Audio level history (simple waveform)
+        this.drawAudioHistory(ctx, centerX, 450, colors);
+        
+        // Raw frequency spectrum (small)
+        this.drawMiniSpectrum(ctx, 50, this.height - 120, colors);
+        
+        // Status indicators
+        this.drawStatusIndicators(ctx, centerX, this.height - 40, colors);
+    }
+
+    drawVolumeMeter(ctx, centerX, y, colors) {
+        const volume = this.audioData.volume;
+        const meterWidth = 400;
+        const meterHeight = 40;
+        
+        // Background
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(centerX - meterWidth/2, y, meterWidth, meterHeight);
+        
+        // Volume bar
+        const fillWidth = (volume / 100) * meterWidth;
+        const gradient = ctx.createLinearGradient(centerX - meterWidth/2, 0, centerX + meterWidth/2, 0);
+        gradient.addColorStop(0, colors.accent[0]);
+        gradient.addColorStop(0.5, colors.primary[0]);
+        gradient.addColorStop(1, colors.secondary[0]);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(centerX - meterWidth/2, y, fillWidth, meterHeight);
+        
+        // Border
+        ctx.strokeStyle = colors.primary[0];
+        ctx.lineWidth = 2;
+        ctx.strokeRect(centerX - meterWidth/2, y, meterWidth, meterHeight);
+        
+        // Volume text
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Volume: ${Math.round(volume)}%`, centerX, y + 28);
+        
+        // Label
+        ctx.font = '14px Arial';
+        ctx.fillStyle = colors.accent[0];
+        ctx.fillText('Overall Audio Level', centerX, y - 10);
+    }
+
+    drawFrequencyRanges(ctx, centerX, y, colors) {
+        const ranges = ['bass', 'midlow', 'mid', 'midhigh', 'high'];
+        const labels = ['Bass', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
+        const barWidth = 60;
+        const maxHeight = 80;
+        const spacing = 80;
+        const startX = centerX - (ranges.length * spacing) / 2;
+        
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        
+        ranges.forEach((range, index) => {
+            const level = this.audioData.frequencyBins[range] || 0;
+            const barHeight = level * maxHeight;
+            const x = startX + index * spacing;
+            
+            // Background bar
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(x - barWidth/2, y + maxHeight - maxHeight, barWidth, maxHeight);
+            
+            // Level bar
+            ctx.fillStyle = colors.primary[index % colors.primary.length];
+            ctx.fillRect(x - barWidth/2, y + maxHeight - barHeight, barWidth, barHeight);
+            
+            // Border
+            ctx.strokeStyle = colors.accent[0];
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x - barWidth/2, y, barWidth, maxHeight);
+            
+            // Label
+            ctx.fillStyle = colors.accent[0];
+            ctx.fillText(labels[index], x, y + maxHeight + 15);
+            
+            // Value
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(`${Math.round(level * 100)}%`, x, y + maxHeight + 30);
+        });
+        
+        // Title
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = colors.primary[0];
+        ctx.fillText('Frequency Ranges', centerX, y - 15);
+    }
+
+    drawDominantFrequency(ctx, centerX, y, colors) {
+        const freq = this.audioData.dominantFrequency;
+        
+        // Get musical note if AudioProcessor is available globally
+        let note = { note: '', octave: 0 };
+        if (window.liveMusicArtwork && window.liveMusicArtwork.audioProcessor) {
+            note = window.liveMusicArtwork.audioProcessor.getMusicalNote(freq);
+        }
+        
+        ctx.font = 'bold 18px Arial';
+        ctx.fillStyle = colors.secondary[0];
+        ctx.textAlign = 'center';
+        ctx.fillText('Dominant Frequency', centerX, y);
+        
+        ctx.font = 'bold 32px Arial';
+        ctx.fillStyle = colors.primary[0];
+        ctx.fillText(`${Math.round(freq)} Hz`, centerX, y + 40);
+        
+        if (note.note) {
+            ctx.font = 'bold 24px Arial';
+            ctx.fillStyle = colors.accent[0];
+            ctx.fillText(`${note.note}${note.octave}`, centerX, y + 70);
+        }
+    }
+
+    drawBeatIndicator(ctx, centerX, y, colors) {
+        const beatDetected = this.audioData.beatDetected;
+        const radius = 30;
+        
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = colors.secondary[0];
+        ctx.textAlign = 'center';
+        ctx.fillText('Beat Detection', centerX, y - 10);
+        
+        // Circle indicator
+        ctx.beginPath();
+        ctx.arc(centerX, y + 20, radius, 0, Math.PI * 2);
+        
+        if (beatDetected) {
+            ctx.fillStyle = colors.primary[0];
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = colors.primary[0];
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Pulse effect
+            ctx.strokeStyle = colors.accent[0];
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fill();
+            ctx.strokeStyle = colors.accent[0];
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Text
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = beatDetected ? '#000000' : colors.accent[0];
+        ctx.fillText(beatDetected ? 'BEAT!' : 'No Beat', centerX, y + 26);
+    }
+
+    drawAudioHistory(ctx, centerX, y, colors) {
+        // Simple visualization of recent audio levels
+        if (!this.audioHistory) {
+            this.audioHistory = new Array(100).fill(0);
+        }
+        
+        // Add current volume to history
+        this.audioHistory.push(this.audioData.volume / 100);
+        if (this.audioHistory.length > 100) {
+            this.audioHistory.shift();
+        }
+        
+        const width = 300;
+        const height = 60;
+        const startX = centerX - width / 2;
+        
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = colors.secondary[0];
+        ctx.textAlign = 'center';
+        ctx.fillText('Audio Level History', centerX, y - 10);
+        
+        // Background
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(startX, y, width, height);
+        
+        // Draw history line
+        ctx.strokeStyle = colors.primary[0];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        this.audioHistory.forEach((level, index) => {
+            const x = startX + (index / this.audioHistory.length) * width;
+            const plotY = y + height - (level * height);
+            
+            if (index === 0) {
+                ctx.moveTo(x, plotY);
+            } else {
+                ctx.lineTo(x, plotY);
+            }
+        });
+        
+        ctx.stroke();
+        
+        // Border
+        ctx.strokeStyle = colors.accent[0];
+        ctx.lineWidth = 1;
+        ctx.strokeRect(startX, y, width, height);
+    }
+
+    drawMiniSpectrum(ctx, x, y, colors) {
+        const width = 200;
+        const height = 80;
+        const barCount = 32;
+        const barWidth = width / barCount;
+        
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = colors.secondary[0];
+        ctx.textAlign = 'left';
+        ctx.fillText('Frequency Spectrum', x, y - 10);
+        
+        // Background
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(x, y, width, height);
+        
+        // Draw spectrum bars
+        for (let i = 0; i < barCount; i++) {
+            const dataIndex = Math.floor((i / barCount) * this.audioData.rawFrequencyData.length);
+            const barHeight = (this.audioData.rawFrequencyData[dataIndex] / 255) * height;
+            
+            ctx.fillStyle = colors.primary[0];
+            ctx.fillRect(x + i * barWidth, y + height - barHeight, barWidth - 1, barHeight);
+        }
+        
+        // Border
+        ctx.strokeStyle = colors.accent[0];
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, width, height);
+    }
+
+    drawStatusIndicators(ctx, centerX, y, colors) {
+        const sensitivity = this.audioData.sensitivity;
+        
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = colors.accent[0];
+        
+        const status = [
+            `Sensitivity: ${sensitivity}/10`,
+            `Sample Rate: 44.1kHz`,
+            `FFT Size: 1024`,
+            `Status: ${this.audioData.volume > 1 ? 'DETECTING AUDIO' : 'NO AUDIO'}`
+        ];
+        
+        status.forEach((text, index) => {
+            const statusColor = index === 3 ? 
+                (this.audioData.volume > 1 ? colors.primary[0] : '#ff6b6b') : 
+                colors.accent[0];
+                
+            ctx.fillStyle = statusColor;
+            ctx.fillText(text, centerX + (index - 1.5) * 150, y);
+        });
     }
 
     renderIdle() {
