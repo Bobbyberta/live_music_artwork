@@ -48,14 +48,12 @@ class VisualizationEngine {
         this.pulseColor = '#00ff87';
         this.particles = [];
         
-        // Beat background visualization instance
+        // Initialize all visualizations
+        this.simplePulseViz = new SimplePulseVisualization();
         this.beatBackgroundViz = new BeatBackgroundVisualization();
-        
-        // Wind breeze visualization instance
         this.windBreezeViz = new WindBreezeVisualization();
-        
-        // Leaf pile visualization instance
         this.leafPileViz = new LeafPileVisualization();
+        this.balloonFloatViz = new BalloonFloatVisualization();
         
         // Initialize animation loop
         this.animate();
@@ -87,7 +85,7 @@ class VisualizationEngine {
         
         if (this.currentMode === 'audiotest') {
             this.renderAudioTest();
-        } else if (this.currentMode === 'simple') {
+        } else if (this.currentMode === 'pulse') {
             this.renderSimplePulse();
         } else if (this.currentMode === 'beatbackground') {
             this.renderBeatBackground();
@@ -95,6 +93,8 @@ class VisualizationEngine {
             this.renderWindBreeze();
         } else if (this.currentMode === 'leafpile') {
             this.renderLeafPile();
+        } else if (this.currentMode === 'balloon-float') {
+            this.renderBalloonFloat();
         } else {
             this.renderIdle();
         }
@@ -103,83 +103,8 @@ class VisualizationEngine {
     }
 
     renderSimplePulse() {
-        const colors = this.colorSchemes[this.currentColorScheme];
-        const centerX = this.width / 2;
-        const centerY = this.height / 2;
-        
-        // Clear canvas with subtle gradient background
-        const gradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(this.width, this.height));
-        gradient.addColorStop(0, 'rgba(26, 26, 46, 0.9)');
-        gradient.addColorStop(1, 'rgba(22, 33, 62, 1)');
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.width, this.height);
-        
-        if (!this.audioData || this.audioData.volume < 1) {
-            // Idle state - gentle pulsing circle
-            const idlePulse = 50 + Math.sin(this.time * 2) * 10;
-            
-            this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, idlePulse, 0, Math.PI * 2);
-            this.ctx.strokeStyle = colors.primary[0] + '40';
-            this.ctx.lineWidth = 3;
-            this.ctx.stroke();
-            
-            // Text
-            this.ctx.font = '24px Arial';
-            this.ctx.fillStyle = colors.accent[0];
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('🎵 Waiting for Audio...', centerX, centerY + 100);
-            return;
-        }
-        
-        // Audio-reactive visualization
-        const volume = this.audioData.volume;
-        const bassEnergy = this.audioData.bassEnergy || 0;
-        const midEnergy = this.audioData.midEnergy || 0;
-        const trebleEnergy = this.audioData.trebleEnergy || 0;
-        const dominantFreq = this.audioData.dominantFrequency || 440;
-        
-        // Calculate pulse radius based on volume
-        this.pulseRadius = 30 + (volume * 3);
-        
-        // Calculate color based on dominant frequency
-        const freqHue = Math.min(360, (dominantFreq - 80) / 4); // Map 80Hz-1520Hz to 0-360 degrees
-        const saturation = Math.min(100, 60 + (volume * 2));
-        const lightness = Math.min(80, 40 + volume);
-        
-        // Main pulse circle
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, this.pulseRadius, 0, Math.PI * 2);
-        
-        // Gradient fill based on audio
-        const pulseGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, this.pulseRadius);
-        pulseGradient.addColorStop(0, `hsla(${freqHue}, ${saturation}%, ${lightness}%, 0.8)`);
-        pulseGradient.addColorStop(1, `hsla(${freqHue}, ${saturation}%, ${lightness}%, 0.2)`);
-        
-        this.ctx.fillStyle = pulseGradient;
-        this.ctx.fill();
-        
-        // Outer ring that responds to bass
-        const bassRing = this.pulseRadius + 20 + (bassEnergy * 2);
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, bassRing, 0, Math.PI * 2);
-        this.ctx.strokeStyle = colors.primary[0] + Math.floor(bassEnergy * 255 / 100).toString(16).padStart(2, '0');
-        this.ctx.lineWidth = 4;
-        this.ctx.stroke();
-        
-        // Mid-frequency particles
-        this.updateParticles(midEnergy, trebleEnergy, colors);
-        this.drawParticles(centerX, centerY, colors);
-        
-        // Simple waveform at bottom
-        this.drawSimpleWaveform(colors);
-        
-        // Audio info text
-        this.ctx.font = '16px Arial';
-        this.ctx.fillStyle = colors.accent[0];
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(`Volume: ${volume.toFixed(1)}%`, centerX, this.height - 60);
-        this.ctx.fillText(`Frequency: ${dominantFreq.toFixed(0)}Hz`, centerX, this.height - 40);
+        // Use the simple pulse visualization
+        this.simplePulseViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
     }
 
     updateParticles(midEnergy, trebleEnergy, colors) {
@@ -589,6 +514,11 @@ class VisualizationEngine {
         this.leafPileViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
     }
 
+    renderBalloonFloat() {
+        // Use the balloon float visualization
+        this.balloonFloatViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
+    }
+
     // Methods to control beat background colors
     setBackgroundColor(color) {
         if (this.beatBackgroundViz) {
@@ -676,6 +606,63 @@ class VisualizationEngine {
     gatherLeaves() {
         if (this.leafPileViz) {
             this.leafPileViz.gatherLeaves();
+        }
+    }
+
+    // Methods to control balloon float settings
+    setBalloonSettings(settings) {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.setBalloonSettings(settings);
+        }
+    }
+
+    setBalloonBeatResponse(settings) {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.setBeatResponse(settings);
+        }
+    }
+
+    setBalloonColors(settings) {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.setColorInfluence(settings);
+        }
+    }
+    
+    getBalloonMusicSpeed() {
+        if (this.balloonFloatViz) {
+            return this.balloonFloatViz.getCurrentMusicSpeed();
+        }
+        return 0;
+    }
+
+    toggleBalloonBeatResponse(enabled) {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.toggleBeatResponse(enabled);
+        }
+    }
+
+    resetBalloons() {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.resetBalloons();
+        }
+    }
+
+    // Methods to control simple pulse settings
+    setPulseSettings(settings) {
+        if (this.simplePulseViz) {
+            this.simplePulseViz.setPulseSettings(settings);
+        }
+    }
+
+    setPulseColors(baseColor, pulseColor) {
+        if (this.simplePulseViz) {
+            this.simplePulseViz.setColors(baseColor, pulseColor);
+        }
+    }
+
+    resetPulse() {
+        if (this.simplePulseViz) {
+            this.simplePulseViz.reset();
         }
     }
 } 
