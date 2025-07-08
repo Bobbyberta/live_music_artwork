@@ -25,6 +25,9 @@ class VisualizationEngine {
         this.travelingParticles = [];
         this.particleTransferRate = 0.02; // Probability per frame of particle travel
         
+        // Debug tracking
+        this.maxVolumeDetected = 0;
+        
         // Color schemes
         this.colorSchemes = {
             celtic: {
@@ -168,6 +171,11 @@ class VisualizationEngine {
 
     updateAudioData(data) {
         this.audioData = data;
+        
+        // Track maximum volume for debugging
+        if (data && data.volume > this.maxVolumeDetected) {
+            this.maxVolumeDetected = data.volume;
+        }
     }
 
     animate() {
@@ -344,6 +352,11 @@ class VisualizationEngine {
         
         // Status indicators
         this.drawStatusIndicators(ctx, centerX, this.height - 40, colors);
+        
+        // Debug panel (only on display 1)
+        if (displayNum === 1) {
+            this.drawDebugPanel(ctx, 20, 80, colors);
+        }
     }
 
     drawVolumeMeter(ctx, centerX, y, colors) {
@@ -590,6 +603,117 @@ class VisualizationEngine {
             ctx.fillStyle = statusColor;
             ctx.fillText(text, centerX + (index - 1.5) * 150, y);
         });
+    }
+
+    drawDebugPanel(ctx, x, y, colors) {
+        const debugInfo = this.getDebugInfo();
+        const panelWidth = 350;
+        const panelHeight = 240;
+        
+        // Background
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(x, y, panelWidth, panelHeight);
+        
+        // Border
+        ctx.strokeStyle = colors.accent[0];
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, panelWidth, panelHeight);
+        
+        // Title
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = colors.primary[0];
+        ctx.textAlign = 'left';
+        ctx.fillText('🔍 Audio Debug Info', x + 10, y + 20);
+        
+        // Debug information
+        ctx.font = '12px monospace';
+        let lineY = y + 40;
+        const lineHeight = 16;
+        
+        debugInfo.forEach(item => {
+            ctx.fillStyle = item.color;
+            ctx.fillText(item.label, x + 10, lineY);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(item.value, x + 160, lineY);
+            lineY += lineHeight;
+        });
+        
+        // Instructions
+        ctx.font = '11px Arial';
+        ctx.fillStyle = colors.secondary[0];
+        ctx.fillText('💡 Open browser console (F12) for detailed logs', x + 10, y + panelHeight - 10);
+    }
+
+    getDebugInfo() {
+        const app = window.liveMusicArtwork;
+        const audioProcessor = app ? app.audioProcessor : null;
+        
+        return [
+            {
+                label: 'Microphone Permission:',
+                value: app && app.isRunning ? '✅ Granted' : '❌ Not granted',
+                color: app && app.isRunning ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Audio Context State:',
+                value: audioProcessor && audioProcessor.audioContext ? 
+                    audioProcessor.audioContext.state : 'Not created',
+                color: audioProcessor && audioProcessor.audioContext && 
+                    audioProcessor.audioContext.state === 'running' ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Audio Processor Active:',
+                value: audioProcessor && audioProcessor.isActive ? '✅ Yes' : '❌ No',
+                color: audioProcessor && audioProcessor.isActive ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Microphone Connected:',
+                value: audioProcessor && audioProcessor.microphone ? '✅ Yes' : '❌ No',
+                color: audioProcessor && audioProcessor.microphone ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Analyser Node:',
+                value: audioProcessor && audioProcessor.analyser ? '✅ Created' : '❌ Not created',
+                color: audioProcessor && audioProcessor.analyser ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Raw Audio Data:',
+                value: this.audioData && this.audioData.rawFrequencyData ? 
+                    `${this.audioData.rawFrequencyData.length} samples` : 'No data',
+                color: this.audioData && this.audioData.rawFrequencyData && 
+                    this.audioData.rawFrequencyData.length > 0 ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'HTTPS/Localhost:',
+                value: (location.protocol === 'https:' || location.hostname === 'localhost' || 
+                    location.hostname === '127.0.0.1') ? '✅ Yes' : '❌ No',
+                color: (location.protocol === 'https:' || location.hostname === 'localhost' || 
+                    location.hostname === '127.0.0.1') ? '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Browser Support:',
+                value: navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 
+                    '✅ Supported' : '❌ Not supported',
+                color: navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 
+                    '#00ff87' : '#ff6b6b'
+            },
+            {
+                label: 'Max Volume Detected:',
+                value: this.maxVolumeDetected ? `${this.maxVolumeDetected.toFixed(1)}%` : '0%',
+                color: this.maxVolumeDetected > 5 ? '#00ff87' : '#ffa500'
+            },
+            {
+                label: 'Track Failures:',
+                value: audioProcessor && audioProcessor.trackFailures ? 
+                    `${audioProcessor.trackFailures} failures` : '0 failures',
+                color: audioProcessor && audioProcessor.trackFailures > 0 ? '#ff6b6b' : '#00ff87'
+            },
+            {
+                label: 'Track Muted:',
+                value: audioProcessor && audioProcessor.isMuted ? '⚠️ Yes' : '✅ No',
+                color: audioProcessor && audioProcessor.isMuted ? '#ffa500' : '#00ff87'
+            }
+        ];
     }
 
     renderIdle() {

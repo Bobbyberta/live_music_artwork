@@ -78,11 +78,15 @@ class LiveMusicArtwork {
         this.dualMonitorBtn = document.getElementById('dualMonitorBtn');
         this.fullscreenBtn = document.getElementById('fullscreenBtn');
         
+        // Troubleshooting
+        this.troubleshootBtn = document.getElementById('troubleshootBtn');
+        
         // Validate all elements exist
         const requiredElements = [
             this.startBtn, this.stopBtn, this.sensitivitySlider, 
             this.sensitivityValue, this.visualModeSelect, this.colorSchemeSelect,
-            this.micStatus, this.audioLevel, this.dualMonitorBtn, this.fullscreenBtn
+            this.micStatus, this.audioLevel, this.dualMonitorBtn, this.fullscreenBtn,
+            this.troubleshootBtn
         ];
         
         if (requiredElements.some(el => !el)) {
@@ -177,6 +181,14 @@ class LiveMusicArtwork {
         window.addEventListener('message', (event) => {
             this.handleDisplay2Message(event);
         });
+        
+        // Troubleshooting guide
+        this.troubleshootBtn.addEventListener('click', () => {
+            this.showTroubleshootingGuide();
+        });
+        
+        // Create error notification area
+        this.createErrorNotifications();
     }
 
     async start() {
@@ -610,6 +622,190 @@ class LiveMusicArtwork {
             }
         }
     }
+
+    createErrorNotifications() {
+        // Create error notification container if it doesn't exist
+        if (!document.getElementById('errorNotifications')) {
+            const container = document.createElement('div');
+            container.id = 'errorNotifications';
+            container.className = 'error-notifications';
+            document.body.appendChild(container);
+        }
+    }
+
+    showAudioError(message) {
+        console.error('🚨 Audio Error:', message);
+        this.showNotification(message, 'error');
+    }
+
+    showAudioWarning(message) {
+        console.warn('⚠️ Audio Warning:', message);
+        this.showNotification(message, 'warning');
+    }
+
+    clearAudioError() {
+        this.clearNotifications('error');
+    }
+
+    clearAudioWarning() {
+        this.clearNotifications('warning');
+    }
+
+    showNotification(message, type = 'error') {
+        const container = document.getElementById('errorNotifications');
+        if (!container) return;
+
+        // Remove existing notifications of the same type
+        this.clearNotifications(type);
+
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = `audio-notification audio-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">${type === 'error' ? '🚨' : '⚠️'}</span>
+                <span class="notification-message">${message}</span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        container.appendChild(notification);
+
+        // Auto-remove warnings after 10 seconds
+        if (type === 'warning') {
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 10000);
+        }
+
+        // Add click to close
+        notification.addEventListener('click', (e) => {
+            if (e.target.classList.contains('notification-close')) {
+                notification.remove();
+            }
+        });
+    }
+
+    clearNotifications(type = null) {
+        const container = document.getElementById('errorNotifications');
+        if (!container) return;
+
+        const selector = type ? `.audio-${type}` : '.audio-notification';
+        const notifications = container.querySelectorAll(selector);
+        notifications.forEach(notification => notification.remove());
+    }
+
+    showTroubleshootingGuide() {
+        // Remove existing modal if present
+        const existingModal = document.querySelector('.trouble-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'trouble-modal';
+        modal.innerHTML = `
+            <div class="trouble-content">
+                <button class="trouble-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                <h3>🔧 Audio Troubleshooting Guide</h3>
+                
+                <h4>🚨 Common Issues & Solutions:</h4>
+                
+                <h4>1. No Microphone Permission</h4>
+                <ul>
+                    <li>Click the <span class="highlight">microphone icon</span> in your browser's address bar</li>
+                    <li>Select <span class="highlight">"Allow"</span> for microphone access</li>
+                    <li>Refresh the page and try again</li>
+                    <li>In Chrome: Settings → Privacy & Security → Site Settings → Microphone</li>
+                </ul>
+
+                <h4>2. HTTPS Required</h4>
+                <ul>
+                    <li>Microphone access requires <span class="highlight">HTTPS</span> or <span class="highlight">localhost</span></li>
+                    <li>If using a web server, ensure it supports HTTPS</li>
+                    <li>For local testing, use: <code>python3 -m http.server 8080</code></li>
+                    <li>Then access via: <code>http://localhost:8080</code></li>
+                </ul>
+
+                <h4>3. Microphone Connection Lost (MediaStreamTrack ended)</h4>
+                <ul>
+                    <li><span class="highlight">Most common cause:</span> Another app took control of the microphone</li>
+                    <li>Close other applications using the microphone (Zoom, Teams, Discord, Skype, etc.)</li>
+                    <li>Close other browser tabs that might be using audio</li>
+                    <li>Check if your microphone was physically disconnected</li>
+                    <li>The app will automatically try to reconnect - watch for notifications</li>
+                    <li>If auto-recovery fails, click "Stop" then "Start" to restart</li>
+                </ul>
+
+                <h4>4. Microphone in Use</h4>
+                <ul>
+                    <li>Only one application can use the microphone at a time</li>
+                    <li>Exit video calling apps completely (don't just minimize)</li>
+                    <li>Check your system tray for hidden apps using audio</li>
+                    <li>Restart your browser if needed</li>
+                </ul>
+
+                <h4>5. Browser Compatibility</h4>
+                <ul>
+                    <li><span class="highlight">✅ Recommended:</span> Chrome 66+, Firefox 60+, Safari 14+, Edge 79+</li>
+                    <li><span class="highlight">❌ Not supported:</span> Internet Explorer, very old browsers</li>
+                    <li>Update your browser to the latest version</li>
+                </ul>
+
+                <h4>6. System Audio Settings</h4>
+                <ul>
+                    <li>Check that your microphone is not muted in system settings</li>
+                    <li>Verify the correct microphone is selected as default</li>
+                    <li>Test microphone in other applications first</li>
+                    <li>Adjust microphone volume/gain if very quiet</li>
+                </ul>
+
+                <h4>🔍 Debug Steps:</h4>
+                <ul>
+                    <li>1. Open browser console (<span class="highlight">F12</span>) and look for error messages</li>
+                    <li>2. Use <span class="highlight">"Audio Test"</span> mode to see debug information</li>
+                    <li>3. Check the debug panel on the left side of the visualization</li>
+                    <li>4. Try speaking loudly near the microphone</li>
+                    <li>5. Adjust sensitivity slider (try setting to 10)</li>
+                </ul>
+
+                <h4>🎤 Testing Your Microphone:</h4>
+                <ul>
+                    <li>Try this test: <a href="https://mic-test.org" target="_blank" style="color: #60efff;">mic-test.org</a></li>
+                    <li>Or use your computer's built-in voice recorder</li>
+                    <li>If those don't work, the issue is with your system, not this app</li>
+                </ul>
+
+                <h4>💡 Still Having Issues?</h4>
+                <ul>
+                    <li>Try a different browser (Chrome is most reliable)</li>
+                    <li>Check browser console for specific error messages</li>
+                    <li>Try running from a proper web server instead of file://</li>
+                    <li>Ensure you're not in private/incognito mode</li>
+                </ul>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function escapeHandler(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        });
+    }
 }
 
 // Initialize application when DOM is loaded
@@ -623,9 +819,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Available commands:');
         console.log('- liveMusicArtwork.start() - Start visualization');
         console.log('- liveMusicArtwork.stop() - Stop visualization');
-        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (complementary, mirror, reactive)');
+        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, complementary, mirror, reactive)');
         console.log('- liveMusicArtwork.setColorScheme(scheme) - Set colors (celtic, fire, ocean, sunset)');
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
+        console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');
+        console.log('- liveMusicArtwork.testMicrophone() - Test microphone access manually');
+        
+        // Add debug methods to the instance
+        window.liveMusicArtwork.debugAudio = function() {
+            const audioProcessor = this.audioProcessor;
+            console.log('🔍 Audio Debug Information:');
+            console.log('- Audio Context:', audioProcessor?.audioContext);
+            console.log('- Audio Context State:', audioProcessor?.audioContext?.state);
+            console.log('- Is Active:', audioProcessor?.isActive);
+            console.log('- Microphone Node:', audioProcessor?.microphone);
+            console.log('- Analyser Node:', audioProcessor?.analyser);
+            console.log('- Current Volume:', audioProcessor?.currentVolume);
+            console.log('- Dominant Frequency:', audioProcessor?.dominantFrequency);
+            console.log('- Stream:', audioProcessor?.stream);
+            if (audioProcessor?.stream) {
+                console.log('- Audio Tracks:', audioProcessor.stream.getAudioTracks());
+            }
+        };
+        
+        window.liveMusicArtwork.testMicrophone = async function() {
+            console.log('🎤 Testing microphone access...');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log('✅ Microphone access successful!');
+                console.log('📊 Stream details:', stream);
+                console.log('🎵 Audio tracks:', stream.getAudioTracks());
+                
+                // Stop the test stream
+                stream.getTracks().forEach(track => track.stop());
+                console.log('🔇 Test stream stopped');
+            } catch (error) {
+                console.error('❌ Microphone test failed:', error);
+                console.log('Error name:', error.name);
+                console.log('Error message:', error.message);
+            }
+        };
         
     } catch (error) {
         console.error('Failed to initialize Live Music Artwork:', error);

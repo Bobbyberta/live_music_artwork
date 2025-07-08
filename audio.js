@@ -32,20 +32,89 @@ class AudioProcessor {
 
     async initialize() {
         try {
-            // Create audio context
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('🎤 Starting audio initialization...');
             
-            // Request microphone access
-            const stream = await navigator.mediaDevices.getUserMedia({
+            // Check if getUserMedia is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('getUserMedia not supported in this browser. Please use Chrome, Firefox, Safari, or Edge.');
+            }
+            
+            // Check if we're on HTTPS or localhost
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                console.warn('⚠️ Not on HTTPS or localhost - microphone access may be blocked');
+            }
+            
+            // Create audio context
+            console.log('🔊 Creating audio context...');
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('✅ Audio context created, state:', this.audioContext.state);
+            
+            // Resume audio context if suspended (required by some browsers)
+            if (this.audioContext.state === 'suspended') {
+                console.log('🔄 Resuming suspended audio context...');
+                await this.audioContext.resume();
+                console.log('✅ Audio context resumed, state:', this.audioContext.state);
+            }
+            
+            // Try to get list of available audio input devices
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioInputs = devices.filter(device => device.kind === 'audioinput');
+                console.log('🎙️ Available audio input devices:', audioInputs.length);
+                audioInputs.forEach((device, index) => {
+                    console.log(`  ${index + 1}. ${device.label || 'Unknown device'} (${device.deviceId})`);
+                });
+            } catch (devicesError) {
+                console.warn('⚠️ Could not enumerate devices:', devicesError);
+            }
+            
+            // Request microphone access with detailed constraints
+            console.log('🎤 Requesting microphone access...');
+            const constraints = {
                 audio: {
                     echoCancellation: false,
                     noiseSuppression: false,
                     autoGainControl: false,
-                    sampleRate: 44100
+                    sampleRate: { ideal: 44100 },
+                    channelCount: { ideal: 1 }
                 }
+            };
+            
+            console.log('📋 Audio constraints:', constraints);
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('✅ Microphone access granted');
+            
+            // Check stream tracks
+            const audioTracks = stream.getAudioTracks();
+            console.log('🎵 Audio tracks:', audioTracks.length);
+            audioTracks.forEach((track, index) => {
+                console.log(`  Track ${index + 1}:`, {
+                    label: track.label,
+                    enabled: track.enabled,
+                    muted: track.muted,
+                    readyState: track.readyState,
+                    settings: track.getSettings()
+                });
+                
+                // Add error handling for track failures
+                track.addEventListener('ended', () => {
+                    console.error('🚨 MediaStreamTrack ended unexpectedly');
+                    this.handleTrackFailure('Track ended unexpectedly. This usually means another application took control of the microphone.');
+                });
+                
+                track.addEventListener('mute', () => {
+                    console.warn('🔇 MediaStreamTrack muted');
+                    this.handleTrackMute();
+                });
+                
+                track.addEventListener('unmute', () => {
+                    console.log('🔊 MediaStreamTrack unmuted');
+                    this.handleTrackUnmute();
+                });
             });
 
             // Create audio nodes
+            console.log('🔗 Creating audio nodes...');
             this.microphone = this.audioContext.createMediaStreamSource(stream);
             this.analyser = this.audioContext.createAnalyser();
             
@@ -54,17 +123,64 @@ class AudioProcessor {
             this.analyser.smoothingTimeConstant = 0.8;
             this.bufferLength = this.analyser.frequencyBinCount;
             this.dataArray = new Uint8Array(this.bufferLength);
+            console.log('📊 Analyser configured - FFT size:', this.analyser.fftSize, 'Buffer length:', this.bufferLength);
             
             // Connect audio nodes
             this.microphone.connect(this.analyser);
+            console.log('🔌 Audio nodes connected');
+            
+            // Store stream reference for cleanup
+            this.stream = stream;
             
             this.isActive = true;
             this.startAnalysis();
             
+            console.log('🎉 Audio initialization complete!');
             return true;
         } catch (error) {
-            console.error('Error initializing audio:', error);
-            throw new Error('Could not access microphone. Please allow microphone access and try again.');
+            console.error('❌ Error initializing audio:', error);
+            
+            // Provide specific error messages
+            let errorMessage = 'Could not access microphone. ';
+            
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage += 'Permission denied. Please allow microphone access and refresh the page.';
+            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                errorMessage += 'No microphone found. Please connect a microphone and try again.';
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                errorMessage += 'Microphone is being used by another application. Please close other apps using the microphone.';
+            } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+                errorMessage += 'Microphone does not support the required audio settings. Trying basic settings...';
+                
+                // Try again with basic constraints
+                try {
+                    console.log('🔄 Retrying with basic audio constraints...');
+                    const basicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    this.microphone = this.audioContext.createMediaStreamSource(basicStream);
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.fftSize = 1024;
+                    this.analyser.smoothingTimeConstant = 0.8;
+                    this.bufferLength = this.analyser.frequencyBinCount;
+                    this.dataArray = new Uint8Array(this.bufferLength);
+                    this.microphone.connect(this.analyser);
+                    this.stream = basicStream;
+                    this.isActive = true;
+                    this.startAnalysis();
+                    
+                    console.log('✅ Basic audio initialization successful!');
+                    return true;
+                } catch (retryError) {
+                    console.error('❌ Basic audio initialization also failed:', retryError);
+                    errorMessage += ' Basic settings also failed.';
+                }
+            } else if (error.name === 'TypeError') {
+                errorMessage += 'Browser does not support microphone access. Please use Chrome, Firefox, Safari, or Edge.';
+            } else {
+                errorMessage += error.message || 'Unknown error occurred.';
+            }
+            
+            throw new Error(errorMessage);
         }
     }
 
@@ -197,19 +313,159 @@ class AudioProcessor {
     }
 
     stop() {
+        console.log('🛑 Stopping audio processor...');
         this.isActive = false;
+        
+        // Clear any retry timeouts
+        if (this.retryTimeout) {
+            clearTimeout(this.retryTimeout);
+            this.retryTimeout = null;
+        }
+        
+        // Stop all tracks in the stream
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('🔇 Stopped audio track:', track.label);
+            });
+            this.stream = null;
+        }
         
         if (this.microphone) {
             this.microphone.disconnect();
+            this.microphone = null;
         }
         
-        if (this.audioContext) {
+        if (this.audioContext && this.audioContext.state !== 'closed') {
             this.audioContext.close();
+            console.log('🔌 Audio context closed');
         }
         
-        this.microphone = null;
         this.analyser = null;
         this.audioContext = null;
+        this.trackFailures = 0;
+        this.isMuted = false;
+        console.log('✅ Audio processor stopped');
+    }
+
+    handleTrackFailure(reason) {
+        console.error('🚨 Audio track failure:', reason);
+        
+        // Track failure count for exponential backoff
+        this.trackFailures = (this.trackFailures || 0) + 1;
+        
+        // Notify the UI about the failure
+        if (window.liveMusicArtwork && window.liveMusicArtwork.showAudioError) {
+            window.liveMusicArtwork.showAudioError(`Microphone connection lost: ${reason}`);
+        }
+        
+        // Set inactive but don't fully stop - we'll try to recover
+        this.isActive = false;
+        
+        // Attempt automatic recovery with exponential backoff
+        const retryDelay = Math.min(1000 * Math.pow(2, this.trackFailures - 1), 10000); // Max 10 seconds
+        console.log(`🔄 Attempting recovery in ${retryDelay}ms (attempt ${this.trackFailures})`);
+        
+        this.retryTimeout = setTimeout(async () => {
+            if (this.trackFailures <= 3) { // Max 3 retry attempts
+                try {
+                    console.log('🔄 Attempting to restart audio...');
+                    await this.restartAudio();
+                } catch (error) {
+                    console.error('❌ Audio restart failed:', error);
+                    this.handleTrackFailure('Failed to restart audio connection');
+                }
+            } else {
+                console.error('❌ Maximum retry attempts reached. Manual restart required.');
+                if (window.liveMusicArtwork && window.liveMusicArtwork.showAudioError) {
+                    window.liveMusicArtwork.showAudioError('Multiple microphone failures. Please click "Start" to try again or check the troubleshooting guide.');
+                }
+            }
+        }, retryDelay);
+    }
+
+    handleTrackMute() {
+        this.isMuted = true;
+        console.warn('🔇 Microphone muted (possibly by system or another app)');
+        
+        if (window.liveMusicArtwork && window.liveMusicArtwork.showAudioWarning) {
+            window.liveMusicArtwork.showAudioWarning('Microphone muted - check system audio settings');
+        }
+    }
+
+    handleTrackUnmute() {
+        this.isMuted = false;
+        console.log('🔊 Microphone unmuted');
+        
+        if (window.liveMusicArtwork && window.liveMusicArtwork.clearAudioWarning) {
+            window.liveMusicArtwork.clearAudioWarning();
+        }
+    }
+
+    async restartAudio() {
+        console.log('🔄 Restarting audio system...');
+        
+        // Clean up existing resources
+        if (this.microphone) {
+            this.microphone.disconnect();
+            this.microphone = null;
+        }
+        
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+        
+        // Don't close audio context - reuse it
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+        
+        // Request new microphone access
+        const constraints = {
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                sampleRate: { ideal: 44100 },
+                channelCount: { ideal: 1 }
+            }
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('✅ New microphone stream acquired');
+        
+        // Set up new audio chain
+        this.microphone = this.audioContext.createMediaStreamSource(stream);
+        this.microphone.connect(this.analyser);
+        this.stream = stream;
+        
+        // Add event listeners to new tracks
+        const audioTracks = stream.getAudioTracks();
+        audioTracks.forEach((track, index) => {
+            track.addEventListener('ended', () => {
+                console.error('🚨 MediaStreamTrack ended unexpectedly');
+                this.handleTrackFailure('Track ended unexpectedly. This usually means another application took control of the microphone.');
+            });
+            
+            track.addEventListener('mute', () => {
+                console.warn('🔇 MediaStreamTrack muted');
+                this.handleTrackMute();
+            });
+            
+            track.addEventListener('unmute', () => {
+                console.log('🔊 MediaStreamTrack unmuted');
+                this.handleTrackUnmute();
+            });
+        });
+        
+        this.isActive = true;
+        this.trackFailures = 0; // Reset failure count on successful restart
+        console.log('🎉 Audio system restarted successfully');
+        
+        if (window.liveMusicArtwork && window.liveMusicArtwork.clearAudioError) {
+            window.liveMusicArtwork.clearAudioError();
+        }
     }
 
     // Utility methods for music analysis
