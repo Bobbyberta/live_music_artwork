@@ -47,40 +47,41 @@ class LiveMusicArtwork {
     }
 
     setupUIElements() {
-        // Main controls
+        // Initialize DOM elements
         this.startBtn = document.getElementById('startBtn');
         this.stopBtn = document.getElementById('stopBtn');
+        this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext('2d');
         this.sensitivitySlider = document.getElementById('sensitivity');
         this.sensitivityValue = document.getElementById('sensitivityValue');
         this.visualModeSelect = document.getElementById('visualMode');
         this.colorSchemeSelect = document.getElementById('colorScheme');
+        this.troubleshootBtn = document.getElementById('troubleshootBtn');
+        this.debugToggleBtn = document.getElementById('debugToggleBtn');
+        this.fullscreenBtn = document.getElementById('fullscreenBtn');
+        this.fullscreenExitBtn = document.getElementById('fullscreenExitBtn');
         this.micStatus = document.getElementById('micStatus');
         this.audioLevel = document.getElementById('audioLevel');
-        this.fullscreenBtn = document.getElementById('fullscreenBtn');
-        
-        // Canvas
-        this.canvas = document.getElementById('canvas');
-        
-        // Troubleshooting
-        this.troubleshootBtn = document.getElementById('troubleshootBtn');
-        
-        // Color controls for beat background visualization
+        this.frequencyDisplay = document.getElementById('frequency');
+        this.volumeDisplay = document.getElementById('volume');
+        this.backgroundColor = document.getElementById('backgroundColor');
+        this.beatColor = document.getElementById('beatColor');
         this.colorControls = document.getElementById('colorControls');
-        this.backgroundColorPicker = document.getElementById('backgroundColor');
-        this.beatColorPicker = document.getElementById('beatColor');
         
-        // Validate all elements exist
-        const requiredElements = [
-            this.startBtn, this.stopBtn, this.sensitivitySlider, 
-            this.sensitivityValue, this.visualModeSelect, this.colorSchemeSelect,
-            this.micStatus, this.audioLevel, this.fullscreenBtn, this.canvas,
-            this.troubleshootBtn, this.colorControls, this.backgroundColorPicker,
-            this.beatColorPicker
-        ];
+        // State
+        this.isFullscreen = false;
+        this.originalCanvasSize = {
+            width: this.canvas.width,
+            height: this.canvas.height
+        };
         
-        const missingElements = requiredElements.filter(element => !element);
-        if (missingElements.length > 0) {
-            throw new Error('Missing required UI elements');
+        // Verify all elements exist
+        if (!this.startBtn || !this.stopBtn || !this.canvas || !this.sensitivitySlider || 
+            !this.visualModeSelect || !this.colorSchemeSelect || !this.debugToggleBtn ||
+            !this.micStatus || !this.audioLevel || !this.fullscreenBtn || !this.fullscreenExitBtn || !this.canvas ||
+            !this.frequencyDisplay || !this.volumeDisplay || !this.backgroundColor || !this.beatColor) {
+            console.error('❌ Some DOM elements are missing');
+            return;
         }
     }
 
@@ -102,12 +103,10 @@ class LiveMusicArtwork {
         this.visualModeSelect.addEventListener('change', (e) => {
             const mode = e.target.value;
             
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setMode(mode);
-            }
+            this.updateVisualizationMode(mode);
             
             // Show/hide color controls based on mode
-            this.toggleColorControls(mode === 'beatbackground');
+            this.toggleColorControls(mode === 'beat-background');
         });
         
         // Color scheme
@@ -118,14 +117,14 @@ class LiveMusicArtwork {
         });
         
         // Background color picker
-        this.backgroundColorPicker.addEventListener('input', (e) => {
+        this.backgroundColor.addEventListener('input', (e) => {
             if (this.visualizationEngine) {
                 this.visualizationEngine.setBackgroundColor(e.target.value);
             }
         });
         
         // Beat color picker
-        this.beatColorPicker.addEventListener('input', (e) => {
+        this.beatColor.addEventListener('input', (e) => {
             if (this.visualizationEngine) {
                 this.visualizationEngine.setBeatColor(e.target.value);
             }
@@ -134,6 +133,30 @@ class LiveMusicArtwork {
         // Fullscreen
         this.fullscreenBtn.addEventListener('click', () => {
             this.toggleFullscreen();
+        });
+        
+        // Fullscreen exit button
+        this.fullscreenExitBtn.addEventListener('click', () => {
+            this.exitFullscreen();
+        });
+        
+        // Handle fullscreen change events
+        document.addEventListener('fullscreenchange', () => {
+            this.handleFullscreenChange();
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            this.handleFullscreenChange();
+        });
+        document.addEventListener('mozfullscreenchange', () => {
+            this.handleFullscreenChange();
+        });
+        document.addEventListener('MSFullscreenChange', () => {
+            this.handleFullscreenChange();
+        });
+        
+        // Debug toggle button
+        this.debugToggleBtn.addEventListener('click', () => {
+            this.toggleDebugInfo();
         });
         
         // Handle page visibility changes
@@ -169,8 +192,16 @@ class LiveMusicArtwork {
                     break;
                 case 'Escape':
                     e.preventDefault();
-                    if (this.isRunning) {
+                    if (this.isFullscreen) {
+                        this.exitFullscreen();
+                    } else if (this.isRunning) {
                         this.stop();
+                    }
+                    break;
+                case 'KeyF':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.toggleFullscreen();
                     }
                     break;
             }
@@ -193,8 +224,8 @@ class LiveMusicArtwork {
             
             // If beat background mode, set the initial colors
             if (this.visualModeSelect.value === 'beatbackground') {
-                this.visualizationEngine.setBackgroundColor(this.backgroundColorPicker.value);
-                this.visualizationEngine.setBeatColor(this.beatColorPicker.value);
+                this.visualizationEngine.setBackgroundColor(this.backgroundColor.value);
+                this.visualizationEngine.setBeatColor(this.beatColor.value);
             }
             
             // Start audio processing with callback
@@ -205,6 +236,10 @@ class LiveMusicArtwork {
             
             this.isRunning = true;
             this.updateUIState();
+            
+            // Update debug button text and visibility for current visualization
+            this.updateDebugButtonText();
+            this.updateDebugButtonVisibility(this.visualModeSelect.value);
             
             this.showMessage('Visualization started! 🎵');
             
@@ -348,13 +383,44 @@ class LiveMusicArtwork {
     }
 
     handleResize() {
-        // Handle canvas resizing if needed
-        // The canvas size is managed by CSS, so this is mainly for future extensibility
+        if (this.isFullscreen) {
+            // Update canvas size in fullscreen mode
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            
+            // Update visualization engine bounds if it exists
+            if (this.visualizationEngine) {
+                this.visualizationEngine.updateBounds(this.canvas.width, this.canvas.height);
+            }
+        }
     }
 
     toggleColorControls(show) {
         if (this.colorControls) {
             this.colorControls.style.display = show ? 'flex' : 'none';
+        }
+    }
+
+    updateVisualizationMode(mode) {
+        // Update visualization mode if engine is running
+        if (this.visualizationEngine) {
+            this.visualizationEngine.setMode(mode);
+            // Update debug button text for the new visualization
+            this.updateDebugButtonText();
+        }
+        
+        // Update debug button visibility
+        this.updateDebugButtonVisibility(mode);
+    }
+
+    updateDebugButtonVisibility(mode) {
+        // Show/hide debug button based on visualization support
+        if (this.debugToggleBtn) {
+            if (mode === 'balloon-float') {
+                this.debugToggleBtn.style.display = 'inline-block';
+            } else {
+                this.debugToggleBtn.style.display = 'none';
+            }
         }
     }
 
@@ -451,23 +517,105 @@ class LiveMusicArtwork {
     }
 
     toggleFullscreen() {
-        // Toggle fullscreen for main window
-        if (!document.fullscreenElement) {
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            } else if (document.documentElement.webkitRequestFullscreen) {
-                document.documentElement.webkitRequestFullscreen();
-            } else if (document.documentElement.msRequestFullscreen) {
-                document.documentElement.msRequestFullscreen();
-            }
+        if (!this.isFullscreen) {
+            this.enterFullscreen();
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
+            this.exitFullscreen();
+        }
+    }
+    
+    enterFullscreen() {
+        // Add fullscreen class to body
+        document.body.classList.add('fullscreen-mode');
+        
+        // Store original canvas size
+        this.originalCanvasSize = {
+            width: this.canvas.width,
+            height: this.canvas.height
+        };
+        
+        // Set canvas to full screen size
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        // Update canvas styling
+        this.canvas.style.width = '100vw';
+        this.canvas.style.height = '100vh';
+        
+        // Update visualization engine bounds if it exists
+        if (this.visualizationEngine) {
+            this.visualizationEngine.updateBounds(this.canvas.width, this.canvas.height);
+        }
+        
+        this.isFullscreen = true;
+        this.fullscreenBtn.textContent = 'Exit Fullscreen';
+        
+        // Request browser fullscreen
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
+        }
+    }
+    
+    exitFullscreen() {
+        // Remove fullscreen class from body
+        document.body.classList.remove('fullscreen-mode');
+        
+        // Restore original canvas size
+        this.canvas.width = this.originalCanvasSize.width;
+        this.canvas.height = this.originalCanvasSize.height;
+        
+        // Reset canvas styling
+        this.canvas.style.width = '';
+        this.canvas.style.height = '';
+        
+        // Update visualization engine bounds if it exists
+        if (this.visualizationEngine) {
+            this.visualizationEngine.updateBounds(this.canvas.width, this.canvas.height);
+        }
+        
+        this.isFullscreen = false;
+        this.fullscreenBtn.textContent = 'Toggle Fullscreen';
+        
+        // Exit browser fullscreen
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+    
+    handleFullscreenChange() {
+        // Handle cases where user exits fullscreen using browser controls
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+            !document.mozFullScreenElement && !document.msFullscreenElement) {
+            if (this.isFullscreen) {
+                this.exitFullscreen();
             }
+        }
+    }
+
+    toggleDebugInfo() {
+        if (this.visualizationEngine) {
+            // Get current debug state and toggle it
+            const currentState = this.visualizationEngine.getDebugInfoState();
+            this.visualizationEngine.toggleDebugInfo(!currentState);
+            
+            // Update button text
+            this.debugToggleBtn.textContent = currentState ? 'Show Debug Info' : 'Hide Debug Info';
+        }
+    }
+    
+    // Update debug button text based on current state
+    updateDebugButtonText() {
+        if (this.visualizationEngine) {
+            const currentState = this.visualizationEngine.getDebugInfoState();
+            this.debugToggleBtn.textContent = currentState ? 'Hide Debug Info' : 'Show Debug Info';
         }
     }
 
@@ -1023,17 +1171,7 @@ window.addEventListener('DOMContentLoaded', () => {
 The visualization needs audio input to work properly!`);
         });
         
-        // Debug toggle button
-        document.getElementById('debugToggleBtn').addEventListener('click', function() {
-            if (liveMusicArtwork.visualizationEngine) {
-                const currentState = liveMusicArtwork.visualizationEngine.getDebugInfoState();
-                const newState = !currentState;
-                liveMusicArtwork.visualizationEngine.toggleDebugInfo(newState);
-                
-                // Update button text
-                this.textContent = newState ? 'Hide Debug Info' : 'Show Debug Info';
-            }
-        });
+
         
         // Color control visibility
     } catch (error) {

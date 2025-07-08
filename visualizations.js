@@ -16,6 +16,9 @@ class VisualizationEngine {
         // Debug tracking
         this.maxVolumeDetected = 0;
         
+        // Current visualization reference
+        this.currentVisualization = null;
+        
         // Color schemes
         this.colorSchemes = {
             celtic: {
@@ -61,6 +64,28 @@ class VisualizationEngine {
 
     setMode(mode) {
         this.currentMode = mode;
+        
+        // Set the current visualization reference
+        switch(mode) {
+            case 'pulse':
+                this.currentVisualization = this.simplePulseViz;
+                break;
+            case 'beat-background':
+                this.currentVisualization = this.beatBackgroundViz;
+                break;
+            case 'wind-breeze':
+                this.currentVisualization = this.windBreezeViz;
+                break;
+            case 'leaf-pile':
+                this.currentVisualization = this.leafPileViz;
+                break;
+            case 'balloon-float':
+                this.currentVisualization = this.balloonFloatViz;
+                break;
+            default:
+                this.currentVisualization = null;
+        }
+        
         console.log(`🎨 Visualization mode set to: ${mode}`);
     }
 
@@ -87,11 +112,11 @@ class VisualizationEngine {
             this.renderAudioTest();
         } else if (this.currentMode === 'pulse') {
             this.renderSimplePulse();
-        } else if (this.currentMode === 'beatbackground') {
+        } else if (this.currentMode === 'beat-background') {
             this.renderBeatBackground();
-        } else if (this.currentMode === 'windbreeze') {
+        } else if (this.currentMode === 'wind-breeze') {
             this.renderWindBreeze();
-        } else if (this.currentMode === 'leafpile') {
+        } else if (this.currentMode === 'leaf-pile') {
             this.renderLeafPile();
         } else if (this.currentMode === 'balloon-float') {
             this.renderBalloonFloat();
@@ -685,5 +710,28 @@ class VisualizationEngine {
             return this.balloonFloatViz.getDebugInfoState();
         }
         return true; // Default to showing debug info
+    }
+    
+    // Update canvas bounds for all visualizations
+    updateBounds(width, height) {
+        this.width = width;
+        this.height = height;
+        
+        // Update bounds for all visualizations that support it
+        if (this.balloonFloatViz && this.balloonFloatViz.updateBounds) {
+            this.balloonFloatViz.updateBounds(width, height);
+        }
+        if (this.leafPileViz && this.leafPileViz.updateBounds) {
+            this.leafPileViz.updateBounds(width, height);
+        }
+        if (this.windBreezeViz && this.windBreezeViz.updateBounds) {
+            this.windBreezeViz.updateBounds(width, height);
+        }
+        if (this.beatBackgroundViz && this.beatBackgroundViz.updateBounds) {
+            this.beatBackgroundViz.updateBounds(width, height);
+        }
+        if (this.simplePulseViz && this.simplePulseViz.updateBounds) {
+            this.simplePulseViz.updateBounds(width, height);
+        }
     }
 } 
