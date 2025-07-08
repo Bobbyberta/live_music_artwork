@@ -39,7 +39,9 @@ A real-time browser-based music visualization experience designed for ceilidh mu
 - Visualization mode switching
 - Color scheme selection
 - Real-time audio level monitoring
-- Keyboard shortcuts (Space to start/stop, Escape to stop)
+- **Dual monitor support** with separate window management
+- **Fullscreen mode** for both displays
+- Keyboard shortcuts (Space to start/stop, Escape to stop, F11 for fullscreen)
 
 ## 🚀 Getting Started
 
@@ -94,6 +96,17 @@ A real-time browser-based music visualization experience designed for ceilidh mu
 ### Keyboard Shortcuts
 - `Space`: Toggle start/stop
 - `Escape`: Stop visualization
+- `F11`: Toggle fullscreen (in either window)
+
+### 🖥️ Dual Monitor Setup
+1. Click **"Open Dual Monitor Mode"**
+2. A new window opens for Display 2 - drag it to your second monitor
+3. Resize or maximize both windows as desired
+4. Use **F11** in either window for fullscreen mode
+5. **Complementary mode** shows particles traveling between monitors
+6. Both displays stay synchronized automatically
+
+**Perfect for live performances!** Each monitor can show different but harmonizing visualizations with particles flowing between them.
 
 ### Optimization for Ceilidh Music
 
@@ -110,6 +123,7 @@ The application is specifically tuned for traditional Celtic music:
 ```
 live_music_artwork/
 ├── index.html          # Main application page
+├── display2.html       # Secondary display window for dual monitors
 ├── style.css           # Celtic-inspired styling
 ├── app.js              # Main application controller
 ├── audio.js            # Audio processing and analysis

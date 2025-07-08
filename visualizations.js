@@ -133,6 +133,12 @@ class VisualizationEngine {
 
     start() {
         this.isRunning = true;
+        
+        // Ensure bridge canvas is hidden when starting (unless in dual monitor complementary mode)
+        if (!this.isDualMonitorMode() || this.mode !== 'complementary') {
+            this.hideBridgeCanvas();
+        }
+        
         this.animate();
     }
 
@@ -140,6 +146,7 @@ class VisualizationEngine {
         this.isRunning = false;
         
         // Clean up bridge canvas
+        this.hideBridgeCanvas();
         if (this.bridgeCanvas && this.bridgeCanvas.parentNode) {
             this.bridgeCanvas.parentNode.removeChild(this.bridgeCanvas);
             this.bridgeCanvas = null;
@@ -148,6 +155,11 @@ class VisualizationEngine {
 
     setMode(mode) {
         this.mode = mode;
+        
+        // Hide bridge canvas when not in complementary mode
+        if (mode !== 'complementary') {
+            this.hideBridgeCanvas();
+        }
     }
 
     setColorScheme(scheme) {
@@ -199,11 +211,18 @@ class VisualizationEngine {
         // Display 2: Waveform with particle system
         this.renderWaveform(this.ctx2);
         
-        // Render cross-screen particle system
-        this.updateCrossScreenParticles();
-        this.renderCrossScreenParticles(this.ctx1, 1);
-        this.renderCrossScreenParticles(this.ctx2, 2);
-        this.renderTravelingParticles();
+        // Render cross-screen particle system only in dual monitor mode
+        if (this.isDualMonitorMode()) {
+            this.updateCrossScreenParticles();
+            this.renderCrossScreenParticles(this.ctx1, 1);
+            this.renderCrossScreenParticles(this.ctx2, 2);
+            this.renderTravelingParticles();
+        } else {
+            // Use regular particle system for single display mode
+            this.renderParticles(this.ctx1);
+            this.renderParticles(this.ctx2);
+            this.hideBridgeCanvas(); // Ensure bridge is hidden
+        }
         
         if (this.audioData.beatDetected) {
             this.triggerBeatEffect();
@@ -216,6 +235,9 @@ class VisualizationEngine {
         this.renderFrequencySpectrum(this.ctx2);
         this.renderParticles(this.ctx1);
         this.renderParticles(this.ctx2);
+        
+        // Hide bridge canvas in mirror mode
+        this.hideBridgeCanvas();
     }
 
     renderReactive() {
@@ -231,12 +253,18 @@ class VisualizationEngine {
         } else {
             this.renderWaveform(this.ctx2);
         }
+        
+        // Hide bridge canvas in reactive mode
+        this.hideBridgeCanvas();
     }
 
     renderIdle() {
         // Gentle ambient animation when no audio
         this.renderIdleParticles(this.ctx1);
         this.renderIdleCelticKnots(this.ctx2);
+        
+        // Ensure bridge canvas is hidden during idle state
+        this.hideBridgeCanvas();
     }
 
     renderFrequencySpectrum(ctx) {
@@ -542,7 +570,15 @@ class VisualizationEngine {
     }
 
     renderTravelingParticles() {
-        if (this.travelingParticles.length === 0) return;
+        if (this.travelingParticles.length === 0) {
+            this.hideBridgeCanvas();
+            return;
+        }
+        
+        // Only render bridge effects in dual monitor mode
+        if (!this.isDualMonitorMode()) {
+            return;
+        }
         
         const colors = this.colorSchemes[this.colorScheme];
         
@@ -552,12 +588,34 @@ class VisualizationEngine {
         });
     }
 
+    isDualMonitorMode() {
+        // Check if we're in dual monitor mode by looking for app instance
+        return window.liveMusicArtwork && window.liveMusicArtwork.isDualMonitorMode;
+    }
+
+    hideBridgeCanvas() {
+        if (this.bridgeCanvas) {
+            this.bridgeCanvas.style.display = 'none';
+        }
+    }
+
+    showBridgeCanvas() {
+        if (this.bridgeCanvas) {
+            this.bridgeCanvas.style.display = 'block';
+        }
+    }
+
     renderParticleBridge(particle, colors) {
+        // Only render bridge in dual monitor mode
+        if (!this.isDualMonitorMode()) {
+            return;
+        }
+        
         // Draw connecting line between the screens
         const canvas1Rect = this.canvas1.getBoundingClientRect();
         const canvas2Rect = this.canvas2.getBoundingClientRect();
         
-        // Create a temporary canvas overlay for the bridge effect
+        // Create a temporary canvas overlay for the bridge effect only when needed
         if (!this.bridgeCanvas) {
             this.bridgeCanvas = document.createElement('canvas');
             this.bridgeCanvas.style.position = 'fixed';
@@ -565,10 +623,14 @@ class VisualizationEngine {
             this.bridgeCanvas.style.left = '0';
             this.bridgeCanvas.style.pointerEvents = 'none';
             this.bridgeCanvas.style.zIndex = '1000';
+            this.bridgeCanvas.style.display = 'none'; // Hidden by default
             this.bridgeCanvas.width = window.innerWidth;
             this.bridgeCanvas.height = window.innerHeight;
             document.body.appendChild(this.bridgeCanvas);
         }
+        
+        // Show bridge canvas only when actually rendering particles
+        this.showBridgeCanvas();
         
         const bridgeCtx = this.bridgeCanvas.getContext('2d');
         bridgeCtx.clearRect(0, 0, this.bridgeCanvas.width, this.bridgeCanvas.height);

@@ -21,6 +21,13 @@ class LiveMusicArtwork {
         this.freq2Element = null;
         this.amp2Element = null;
         
+        // Dual monitor support
+        this.dualMonitorBtn = null;
+        this.fullscreenBtn = null;
+        this.display2Window = null;
+        this.isDualMonitorMode = false;
+        this.display2Ready = false;
+        
         this.lastUpdateTime = 0;
         this.updateInterval = 100; // Update UI every 100ms
     }
@@ -67,11 +74,15 @@ class LiveMusicArtwork {
         this.freq2Element = document.getElementById('freq2');
         this.amp2Element = document.getElementById('amp2');
         
+        // Dual monitor controls
+        this.dualMonitorBtn = document.getElementById('dualMonitorBtn');
+        this.fullscreenBtn = document.getElementById('fullscreenBtn');
+        
         // Validate all elements exist
         const requiredElements = [
             this.startBtn, this.stopBtn, this.sensitivitySlider, 
             this.sensitivityValue, this.visualModeSelect, this.colorSchemeSelect,
-            this.micStatus, this.audioLevel
+            this.micStatus, this.audioLevel, this.dualMonitorBtn, this.fullscreenBtn
         ];
         
         if (requiredElements.some(el => !el)) {
@@ -104,12 +115,20 @@ class LiveMusicArtwork {
             if (this.visualizationEngine) {
                 this.visualizationEngine.setMode(e.target.value);
             }
+            // Update Display 2
+            if (this.isDualMonitorMode && this.display2Ready) {
+                this.sendToDisplay2('SETTINGS_UPDATE', { mode: e.target.value });
+            }
         });
         
         // Color scheme
         this.colorSchemeSelect.addEventListener('change', (e) => {
             if (this.visualizationEngine) {
                 this.visualizationEngine.setColorScheme(e.target.value);
+            }
+            // Update Display 2
+            if (this.isDualMonitorMode && this.display2Ready) {
+                this.sendToDisplay2('SETTINGS_UPDATE', { colorScheme: e.target.value });
             }
         });
         
@@ -144,6 +163,20 @@ class LiveMusicArtwork {
                 this.resume();
             }
         });
+        
+        // Dual monitor controls
+        this.dualMonitorBtn.addEventListener('click', () => {
+            this.toggleDualMonitorMode();
+        });
+        
+        this.fullscreenBtn.addEventListener('click', () => {
+            this.toggleFullscreen();
+        });
+        
+        // Listen for messages from Display 2 window
+        window.addEventListener('message', (event) => {
+            this.handleDisplay2Message(event);
+        });
     }
 
     async start() {
@@ -155,6 +188,11 @@ class LiveMusicArtwork {
             
             // Start visualization
             this.visualizationEngine.start();
+            
+            // Start Display 2 if in dual monitor mode
+            if (this.isDualMonitorMode && this.display2Ready) {
+                this.sendToDisplay2('START_VISUALIZATION');
+            }
             
             this.isRunning = true;
             this.updateUIState();
@@ -183,6 +221,11 @@ class LiveMusicArtwork {
             this.visualizationEngine.stop();
         }
         
+        // Stop Display 2 if in dual monitor mode
+        if (this.isDualMonitorMode && this.display2Ready) {
+            this.sendToDisplay2('STOP_VISUALIZATION');
+        }
+        
         this.isRunning = false;
         this.updateUIState();
         this.updateMicrophoneStatus(false);
@@ -208,6 +251,11 @@ class LiveMusicArtwork {
         // Update visualization engine
         if (this.visualizationEngine) {
             this.visualizationEngine.updateAudioData(audioData);
+        }
+        
+        // Send audio data to Display 2 if available
+        if (this.isDualMonitorMode && this.display2Ready) {
+            this.sendToDisplay2('AUDIO_DATA', audioData);
         }
         
         // Update UI periodically to avoid overwhelming the browser
@@ -385,6 +433,181 @@ class LiveMusicArtwork {
         if (this.sensitivitySlider) {
             this.sensitivitySlider.value = value;
             this.sensitivitySlider.dispatchEvent(new Event('input'));
+        }
+    }
+
+    // Dual Monitor Functionality
+    toggleDualMonitorMode() {
+        if (!this.isDualMonitorMode) {
+            this.openDualMonitorMode();
+        } else {
+            this.closeDualMonitorMode();
+        }
+    }
+
+    async openDualMonitorMode() {
+        try {
+            // Calculate window position for second monitor
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            const windowWidth = 900;
+            const windowHeight = 700;
+            
+            // Try to position on second monitor (if available)
+            const leftPosition = screenWidth;
+            
+            // Open Display 2 window
+            this.display2Window = window.open(
+                'display2.html',
+                'Display2Window',
+                `width=${windowWidth},height=${windowHeight},left=${leftPosition},top=100,resizable=yes,scrollbars=no,menubar=no,toolbar=no,location=no,status=no`
+            );
+            
+            if (!this.display2Window) {
+                throw new Error('Could not open Display 2 window. Please allow popups for this site.');
+            }
+            
+            // Wait for Display 2 to load
+            this.display2Window.focus();
+            
+            // Update UI
+            this.isDualMonitorMode = true;
+            this.updateDualMonitorUI();
+            this.showInstructions();
+            
+            this.showMessage('Display 2 opened! Drag the new window to your second monitor.');
+            
+        } catch (error) {
+            console.error('Failed to open dual monitor mode:', error);
+            this.showError('Failed to open dual monitor mode: ' + error.message);
+        }
+    }
+
+    closeDualMonitorMode() {
+        if (this.display2Window && !this.display2Window.closed) {
+            this.display2Window.close();
+        }
+        
+        this.display2Window = null;
+        this.isDualMonitorMode = false;
+        this.display2Ready = false;
+        
+        this.updateDualMonitorUI();
+        this.hideInstructions();
+        
+        this.showMessage('Dual monitor mode closed');
+    }
+
+    updateDualMonitorUI() {
+        const displaysContainer = document.querySelector('.displays-container');
+        const display2Wrapper = document.querySelector('.display-wrapper:nth-child(2)');
+        
+        if (this.isDualMonitorMode) {
+            this.dualMonitorBtn.textContent = 'Close Dual Monitor Mode';
+            this.fullscreenBtn.disabled = false;
+            
+            // Hide Display 2 from main window
+            displaysContainer.classList.add('single-display');
+            display2Wrapper.classList.add('hidden');
+            
+        } else {
+            this.dualMonitorBtn.textContent = 'Open Dual Monitor Mode';
+            this.fullscreenBtn.disabled = true;
+            
+            // Show both displays in main window
+            displaysContainer.classList.remove('single-display');
+            display2Wrapper.classList.remove('hidden');
+        }
+    }
+
+    showInstructions() {
+        const existingInstructions = document.querySelector('.monitor-instructions');
+        if (existingInstructions) return;
+        
+        const instructions = document.createElement('div');
+        instructions.className = 'monitor-instructions';
+        instructions.innerHTML = `
+            <h4>🖥️ Dual Monitor Setup Instructions</h4>
+            <ul>
+                <li><strong>Drag</strong> the new "Display 2" window to your second monitor</li>
+                <li><strong>Resize</strong> or maximize the window on the second monitor</li>
+                <li><strong>Press F11</strong> in either window for fullscreen mode</li>
+                <li><strong>Use complementary mode</strong> to see particles travel between displays</li>
+                <li><strong>Close this popup</strong> by clicking "Close Dual Monitor Mode"</li>
+            </ul>
+            <p><em>Both displays will show synchronized visualizations with cross-screen particle effects!</em></p>
+        `;
+        
+        document.querySelector('.controls').appendChild(instructions);
+    }
+
+    hideInstructions() {
+        const instructions = document.querySelector('.monitor-instructions');
+        if (instructions) {
+            instructions.remove();
+        }
+    }
+
+    handleDisplay2Message(event) {
+        if (event.origin !== window.location.origin) return;
+        
+        const { type, data } = event.data;
+        
+        switch (type) {
+            case 'DISPLAY2_LOADED':
+                console.log('Display 2 window loaded');
+                this.initializeDisplay2();
+                break;
+                
+            case 'DISPLAY2_READY':
+                console.log('Display 2 ready');
+                this.display2Ready = true;
+                if (this.isRunning) {
+                    this.sendToDisplay2('START_VISUALIZATION');
+                }
+                break;
+                
+            case 'DISPLAY2_CLOSED':
+                console.log('Display 2 window closed');
+                this.closeDualMonitorMode();
+                break;
+        }
+    }
+
+    initializeDisplay2() {
+        if (!this.display2Window || this.display2Window.closed) return;
+        
+        // Send initialization data
+        this.sendToDisplay2('INIT_DISPLAY2', {
+            mode: this.visualModeSelect.value,
+            colorScheme: this.colorSchemeSelect.value
+        });
+    }
+
+    sendToDisplay2(type, data = null) {
+        if (this.display2Window && !this.display2Window.closed) {
+            this.display2Window.postMessage({ type, data }, window.location.origin);
+        }
+    }
+
+    toggleFullscreen() {
+        // Toggle fullscreen for main window
+        if (!document.fullscreenElement) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
         }
     }
 }
