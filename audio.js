@@ -1,33 +1,49 @@
 // Audio processing module for live music visualization
 class AudioProcessor {
     constructor() {
+        // Audio nodes
         this.audioContext = null;
-        this.analyser = null;
         this.microphone = null;
-        this.dataArray = null;
-        this.bufferLength = null;
-        this.isActive = false;
-        this.sensitivity = 5;
+        this.analyser = null;
+        this.stream = null;
         
-        // Audio analysis data
-        this.frequencyData = new Float32Array(512);
-        this.timeDomainData = new Float32Array(512);
+        // Audio data
+        this.bufferLength = 0;
+        this.dataArray = null;
+        this.frequencyData = null;
+        this.timeDomainData = null;
+        
+        // Analysis results
         this.currentVolume = 0;
         this.dominantFrequency = 0;
-        this.frequencyBins = [];
+        this.frequencyBins = {};
         this.beatDetected = false;
         this.lastBeatTime = 0;
         
-        // Ceilidh music frequency ranges (Hz)
+        // Settings
+        this.sensitivity = 5;
+        this.isActive = false;
+        
+        // Callbacks for data updates
+        this.callbacks = [];
+        
+        // Error handling
+        this.trackFailures = 0;
+        this.isMuted = false;
+        this.retryTimeout = null;
+        
+        // Debug counter
+        this.debugCounter = 0;
+        
+        // Frequency ranges optimized for ceilidh instruments
         this.frequencyRanges = {
-            bass: { min: 20, max: 250 },      // Bodhran, low instruments
-            midlow: { min: 250, max: 500 },   // Mid-range instruments
-            mid: { min: 500, max: 2000 },     // Fiddle, pipes, vocals
-            midhigh: { min: 2000, max: 4000 }, // Flute, whistle harmonics
-            high: { min: 4000, max: 8000 }    // Harmonics, ambient sounds
+            bass: { min: 20, max: 200 },      // Bodhrán, low strings
+            mid: { min: 200, max: 2000 },     // Core instrument range
+            treble: { min: 2000, max: 8000 }, // High strings, flute
+            high: { min: 8000, max: 20000 }   // Harmonics, breath sounds
         };
         
-        this.callbacks = [];
+        console.log('🎵 AudioProcessor initialized with callback system');
     }
 
     async initialize() {
@@ -123,6 +139,11 @@ class AudioProcessor {
             this.analyser.smoothingTimeConstant = 0.8;
             this.bufferLength = this.analyser.frequencyBinCount;
             this.dataArray = new Uint8Array(this.bufferLength);
+            
+            // Initialize Float32 arrays for more precise analysis
+            this.frequencyData = new Float32Array(this.bufferLength);
+            this.timeDomainData = new Float32Array(this.analyser.fftSize);
+            
             console.log('📊 Analyser configured - FFT size:', this.analyser.fftSize, 'Buffer length:', this.bufferLength);
             
             // Connect audio nodes
@@ -163,6 +184,11 @@ class AudioProcessor {
                     this.analyser.smoothingTimeConstant = 0.8;
                     this.bufferLength = this.analyser.frequencyBinCount;
                     this.dataArray = new Uint8Array(this.bufferLength);
+                    
+                    // Initialize Float32 arrays for more precise analysis
+                    this.frequencyData = new Float32Array(this.bufferLength);
+                    this.timeDomainData = new Float32Array(this.analyser.fftSize);
+                    
                     this.microphone.connect(this.analyser);
                     this.stream = basicStream;
                     this.isActive = true;
@@ -185,19 +211,50 @@ class AudioProcessor {
     }
 
     startAnalysis() {
-        if (!this.isActive) return;
+        if (!this.isActive) {
+            console.warn('🚨 Cannot start analysis - audio processor not active');
+            return;
+        }
         
+        if (!this.analyser) {
+            console.warn('🚨 Cannot start analysis - no analyser available');
+            return;
+        }
+        
+        console.log('🔄 Starting audio analysis loop...');
         this.analyzeAudio();
         requestAnimationFrame(() => this.startAnalysis());
     }
 
     analyzeAudio() {
-        if (!this.analyser) return;
+        if (!this.analyser) {
+            console.warn('🚨 No analyser available for audio analysis');
+            return;
+        }
 
         // Get frequency data
         this.analyser.getByteFrequencyData(this.dataArray);
         this.analyser.getFloatFrequencyData(this.frequencyData);
         this.analyser.getFloatTimeDomainData(this.timeDomainData);
+
+        // Debug: Check if we're getting any data
+        const dataSum = this.dataArray.reduce((sum, val) => sum + val, 0);
+        const dataAverage = dataSum / this.dataArray.length;
+        
+        // Only log every 60 frames (roughly once per second at 60fps)
+        if (!this.debugCounter) this.debugCounter = 0;
+        this.debugCounter++;
+        
+        if (this.debugCounter % 60 === 0) {
+            console.log(`📊 Audio Data Debug:`, {
+                dataSum: dataSum,
+                dataAverage: dataAverage.toFixed(2),
+                dataArrayLength: this.dataArray.length,
+                firstFewValues: Array.from(this.dataArray.slice(0, 10)),
+                analyserConnected: !!this.analyser,
+                contextState: this.audioContext?.state
+            });
+        }
 
         // Calculate overall volume
         this.currentVolume = this.calculateVolume();
@@ -211,16 +268,34 @@ class AudioProcessor {
         // Detect beats/rhythm
         this.detectBeat();
         
-        // Notify callbacks with processed data
-        this.notifyCallbacks({
-            volume: this.currentVolume,
-            dominantFrequency: this.dominantFrequency,
-            frequencyBins: this.frequencyBins,
+        // Debug: Log processed results occasionally
+        if (this.debugCounter % 60 === 0) {
+            console.log(`🎵 Processed Audio Results:`, {
+                volume: this.currentVolume?.toFixed(2),
+                dominantFreq: this.dominantFrequency?.toFixed(1),
+                bassEnergy: this.frequencyBins?.bass?.toFixed(2),
+                callbackCount: this.callbacks?.length || 0,
+                beatDetected: this.beatDetected
+            });
+        }
+        
+        // Create audio data object
+        const audioData = {
+            volume: this.currentVolume || 0,
+            dominantFrequency: this.dominantFrequency || 0,
+            dominantNote: this.getMusicalNote(this.dominantFrequency || 0),
+            bassEnergy: (this.frequencyBins?.bass || 0) * 100,
+            midEnergy: (this.frequencyBins?.mid || 0) * 100,
+            trebleEnergy: (this.frequencyBins?.treble || 0) * 100,
+            highEnergy: (this.frequencyBins?.high || 0) * 100,
             rawFrequencyData: this.dataArray,
             rawTimeDomainData: this.timeDomainData,
-            beatDetected: this.beatDetected,
-            sensitivity: this.sensitivity
-        });
+            beatDetected: this.beatDetected || false,
+            sensitivity: this.sensitivity || 5
+        };
+        
+        // Notify callbacks with processed data
+        this.notifyCallbacks(audioData);
     }
 
     calculateVolume() {
@@ -437,6 +512,16 @@ class AudioProcessor {
         
         // Set up new audio chain
         this.microphone = this.audioContext.createMediaStreamSource(stream);
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 1024;
+        this.analyser.smoothingTimeConstant = 0.8;
+        this.bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(this.bufferLength);
+        
+        // Initialize Float32 arrays for more precise analysis
+        this.frequencyData = new Float32Array(this.bufferLength);
+        this.timeDomainData = new Float32Array(this.analyser.fftSize);
+        
         this.microphone.connect(this.analyser);
         this.stream = stream;
         

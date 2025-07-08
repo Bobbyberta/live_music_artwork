@@ -1,33 +1,28 @@
-# Live Music Artwork 🎵✨
+# 🎵 Live Music Artwork - Ceilidh Visualizations
 
-A real-time browser-based music visualization experience designed for ceilidh music and live performances. Creates beautiful, synchronized graphics on dual displays that react to microphone input and complement each other.
-
-![Celtic-inspired visualization](https://img.shields.io/badge/Celtic-Inspired-green?style=for-the-badge)
-![Real-time Audio](https://img.shields.io/badge/Real--time-Audio-blue?style=for-the-badge)
-![Dual Display](https://img.shields.io/badge/Dual-Display-gold?style=for-the-badge)
+Real-time audio visualization specifically designed for Celtic music performances. Transform your microphone input into beautiful, responsive graphics that dance with the rhythm of fiddles, flutes, and bodhrán.
 
 ## ✨ Features
 
-### 🎼 Audio Processing
-- **Real-time microphone input** using Web Audio API
-- **Frequency analysis** optimized for traditional ceilidh instruments
-- **Beat detection** for rhythm-responsive graphics
+### 🎧 Advanced Audio Processing
+- **Real-time microphone capture** using Web Audio API
+- **Optimized for ceilidh instruments** (fiddle, accordion, flute, bodhrán, pipes)
+- **Frequency analysis** with 1024-point FFT for detailed sound breakdown
+- **Beat detection** specifically tuned for traditional Celtic rhythms
 - **Musical note recognition** with instrument-specific frequency ranges
 - **Adaptive sensitivity** for different environments
 
-### 🎨 Dual Display Visualizations
-- **Audio Test Mode**: Simple debugging visualization showing volume meters, frequency ranges, and audio status - perfect for checking if sound is being detected
-- **Complementary Mode**: Each display shows different but harmonizing graphics with particles that travel between screens
-- **Mirror Mode**: Synchronized identical visualizations
-- **Reactive Mode**: Displays respond to different frequency ranges
+### 🎨 Visualization Modes
+- **Audio Test Mode**: Comprehensive debugging interface showing volume meters, frequency range bars, beat detection, dominant frequency analysis, and system status - perfect for setup and troubleshooting
+- **Simple Pulse**: Elegant audio-reactive visualization with a central pulse that responds to volume, dynamic color changes based on frequency, bass-reactive outer rings, and particle effects triggered by treble
 
 ### 🌈 Visual Elements
-- **Celtic-inspired patterns** with traditional knot designs
-- **Cross-screen particle travel** - particles flow between displays with glowing trails and bridge effects
-- **Particle systems** that respond to ambient sounds
+- **Celtic-inspired design** with traditional color palettes
+- **Particle systems** that respond to different frequency ranges
 - **Frequency spectrum** displays with musical context
 - **Waveform visualization** showing real-time audio
 - **Beat effects** with flash animations and particle bursts
+- **Dynamic color mapping** based on dominant frequencies
 
 ### 🎭 Color Schemes
 - **Celtic Green & Gold**: Traditional Irish/Scottish colors
@@ -40,8 +35,7 @@ A real-time browser-based music visualization experience designed for ceilidh mu
 - Visualization mode switching
 - Color scheme selection
 - Real-time audio level monitoring
-- **Dual monitor support** with separate window management
-- **Fullscreen mode** for both displays
+- **Fullscreen mode** for performances
 - Keyboard shortcuts (Space to start/stop, Escape to stop, F11 for fullscreen)
 
 ## 🚀 Getting Started
@@ -98,29 +92,20 @@ Perfect for setup and troubleshooting:
 - **Audio history graph** shows recent volume levels
 - **Mini frequency spectrum** for detailed analysis
 - **Status indicators** show sensitivity, sample rate, and detection status
+- **Debug panel** displays technical information and system status
 
 **Use this mode to ensure your microphone is working before switching to artistic visualizations!**
 
 ### Controls
 - **Sensitivity Slider**: Adjust how responsive the visualizations are to audio (1 = less sensitive, 10 = very sensitive)
-- **Visualization Mode**: Choose how the two displays interact
+- **Visualization Mode**: Choose between Audio Test and Simple Pulse
 - **Color Scheme**: Select the visual theme
 - **Audio Level**: Monitor microphone input levels
 
 ### Keyboard Shortcuts
 - `Space`: Toggle start/stop
 - `Escape`: Stop visualization
-- `F11`: Toggle fullscreen (in either window)
-
-### 🖥️ Dual Monitor Setup
-1. Click **"Open Dual Monitor Mode"**
-2. A new window opens for Display 2 - drag it to your second monitor
-3. Resize or maximize both windows as desired
-4. Use **F11** in either window for fullscreen mode
-5. **Complementary mode** shows particles traveling between monitors
-6. Both displays stay synchronized automatically
-
-**Perfect for live performances!** Each monitor can show different but harmonizing visualizations with particles flowing between them.
+- `F11`: Toggle fullscreen
 
 ### Optimization for Ceilidh Music
 
@@ -136,13 +121,13 @@ The application is specifically tuned for traditional Celtic music:
 
 ```
 live_music_artwork/
-├── index.html          # Main application page
-├── display2.html       # Secondary display window for dual monitors
-├── style.css           # Celtic-inspired styling
-├── app.js              # Main application controller
-├── audio.js            # Audio processing and analysis
-├── visualizations.js   # Graphics rendering engine
-└── README.md           # This documentation
+├── index.html              # Main application page
+├── style.css               # Celtic-inspired styling
+├── app.js                  # Main application controller
+├── audio.js                # Audio processing and analysis
+├── visualizations.js       # Graphics rendering engine
+├── visualization-template.js # Template for creating new visualization types
+└── README.md               # This documentation
 ```
 
 ## 🔧 Technical Details
@@ -160,7 +145,7 @@ live_music_artwork/
 - ✅ Edge 79+
 
 ### Performance
-- Optimized for dual 800x600 canvas rendering
+- Optimized for 900x600 canvas rendering
 - Adaptive particle count based on performance
 - Automatic pause when browser tab is hidden
 
@@ -201,8 +186,13 @@ Modify the `frequencyRanges` in `audio.js` for different instruments:
 customInstrument: { min: 100, max: 1000 } // Hz
 ```
 
-### Adding Visualization Modes
-Extend the `VisualizationEngine` class with new rendering methods.
+### Adding New Visualization Types
+1. **Copy** `visualization-template.js` to understand the structure
+2. **Add** your new mode to the `<select>` options in `index.html`
+3. **Create** a new render method in the `VisualizationEngine` class
+4. **Integrate** by adding a new case in the `animate()` method
+
+See `visualization-template.js` for detailed examples and integration instructions.
 
 ## 🔍 Troubleshooting
 
@@ -213,60 +203,44 @@ Extend the `VisualizationEngine` class with new rendering methods.
 - Check browser permissions
 - Try refreshing the page
 
-**Poor visualization response**
-- Increase sensitivity setting
-- Check microphone input levels
-- Ensure audio is actually reaching the microphone
-
-**Performance issues**
-- Close other browser tabs
-- Reduce particle count in code
-- Use smaller canvas sizes
-
 **No audio detected**
+- Use "Audio Test" mode to verify microphone is working
 - Check system microphone settings
-- Ensure microphone isn't muted
-- Try speaking directly into microphone
+- Ensure microphone is not muted
+- Try increasing sensitivity slider
 
-## 📱 Mobile Support
+**Poor performance**
+- Close other browser tabs
+- Update your browser
+- Check if hardware acceleration is enabled
 
-While optimized for desktop displays, the application works on mobile devices:
-- Touch controls for all interface elements
-- Responsive design adapts to smaller screens
-- Single display mode on narrow screens
+**Connection issues**
+- Ensure you're running from a web server (not file://)
+- Check if localhost or HTTPS is being used
+- Try a different browser
 
-## 🚀 Deployment
+### Debug Features
+- **Browser console** (F12) shows detailed logging
+- **Audio Test mode** provides comprehensive system status
+- **Debug panel** shows technical information
+- **Troubleshooting guide** button provides step-by-step help
 
-### GitHub Pages
-1. Push code to GitHub repository
-2. Enable GitHub Pages in repository settings
-3. Ensure HTTPS is enabled for microphone access
+### Browser Console Commands
+Open developer console (F12) and try:
+- `liveMusicArtwork.debugAudio()` - Show detailed audio information
+- `liveMusicArtwork.testMicrophone()` - Test microphone access
+- `liveMusicArtwork.setVisualizationMode('audiotest')` - Switch to debug mode
 
-### Custom Hosting
-- Requires HTTPS for microphone API
-- Serve static files from any web server
-- No backend requirements
+## 📜 License
+
+This project is open source and available under the [MIT License](LICENSE).
 
 ## 🤝 Contributing
 
-Contributions welcome! Please feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
-- Improve documentation
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## 📄 License
+## 🎵 About
 
-This project is open source. Feel free to use, modify, and distribute according to your needs.
+Created for the Celtic music community to enhance live performances and practice sessions with beautiful, responsive visualizations. Perfect for ceilidh nights, sessions, and concerts.
 
-## 🎵 Acknowledgments
-
-- Inspired by traditional Celtic music and culture
-- Built with modern Web Audio API technology
-- Designed for the ceilidh community
-
----
-
-**Enjoy creating beautiful music visualizations! 🎶✨**
-
-*Perfect for bringing traditional music into the digital age while honoring its cultural roots.* 
+**Sláinte!** 🍀 

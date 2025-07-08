@@ -27,9 +27,7 @@
                 <label for="visualMode">Visualization Mode:</label>
                 <select id="visualMode">
                     <option value="audiotest">Audio Test</option>
-                    <option value="complementary">Complementary</option>
-                    <option value="mirror">Mirror</option>
-                    <option value="reactive">Reactive</option>
+                    <option value="simple">Simple Pulse</option>
                 </select>
             </div>
 
@@ -44,8 +42,7 @@
             </div>
 
             <div class="control-group">
-                <button id="dualMonitorBtn" class="btn-monitor">Open Dual Monitor Mode</button>
-                <button id="fullscreenBtn" class="btn-monitor" disabled>Toggle Fullscreen</button>
+                <button id="fullscreenBtn" class="btn-monitor">Toggle Fullscreen</button>
             </div>
 
             <div class="control-group">
@@ -53,23 +50,11 @@
             </div>
         </div>
 
-        <div class="displays-container">
-            <div class="display-wrapper">
-                <h3>Display 1</h3>
-                <canvas id="canvas1" width="800" height="600"></canvas>
-                <div class="audio-info">
-                    <span>Frequency: <span id="freq1">0</span> Hz</span>
-                    <span>Amplitude: <span id="amp1">0</span>%</span>
-                </div>
-            </div>
-
-            <div class="display-wrapper">
-                <h3>Display 2</h3>
-                <canvas id="canvas2" width="800" height="600"></canvas>
-                <div class="audio-info">
-                    <span>Peak Freq: <span id="freq2">0</span> Hz</span>
-                    <span>Volume: <span id="amp2">0</span>%</span>
-                </div>
+        <div class="display-container">
+            <canvas id="canvas" width="900" height="600"></canvas>
+            <div class="audio-info">
+                <span>Frequency: <span id="frequency">0</span> Hz</span>
+                <span>Volume: <span id="volume">0</span>%</span>
             </div>
         </div>
 
