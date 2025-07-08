@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Music Artwork - Ceilidh Visualizations</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Live Music Artwork</h1>
+            <p>Real-time visualization for ceilidh music and ambient sounds</p>
+        </header>
+
+        <div class="controls">
+            <button id="startBtn" class="btn-primary">Start Visualization</button>
+            <button id="stopBtn" class="btn-secondary" disabled>Stop</button>
+            
+            <div class="control-group">
+                <label for="sensitivity">Sensitivity:</label>
+                <input type="range" id="sensitivity" min="1" max="10" value="5">
+                <span id="sensitivityValue">5</span>
+            </div>
+
+            <div class="control-group">
+                <label for="visualMode">Visualization Mode:</label>
+                <select id="visualMode">
+                    <option value="complementary">Complementary</option>
+                    <option value="mirror">Mirror</option>
+                    <option value="reactive">Reactive</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="colorScheme">Color Scheme:</label>
+                <select id="colorScheme">
+                    <option value="celtic">Celtic Green & Gold</option>
+                    <option value="fire">Fire & Amber</option>
+                    <option value="ocean">Ocean Blues</option>
+                    <option value="sunset">Sunset</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="displays-container">
+            <div class="display-wrapper">
+                <h3>Display 1</h3>
+                <canvas id="canvas1" width="800" height="600"></canvas>
+                <div class="audio-info">
+                    <span>Frequency: <span id="freq1">0</span> Hz</span>
+                    <span>Amplitude: <span id="amp1">0</span>%</span>
+                </div>
+            </div>
+
+            <div class="display-wrapper">
+                <h3>Display 2</h3>
+                <canvas id="canvas2" width="800" height="600"></canvas>
+                <div class="audio-info">
+                    <span>Peak Freq: <span id="freq2">0</span> Hz</span>
+                    <span>Volume: <span id="amp2">0</span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="status">
+            <div id="micStatus" class="status-indicator">
+                <span class="status-dot"></span>
+                <span>Microphone: Disconnected</span>
+            </div>
+            <div id="audioLevel" class="audio-level">
+                <div class="level-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="audio.js"></script>
+    <script src="visualizations.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 
