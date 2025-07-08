@@ -666,7 +666,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Available commands:');
         console.log('- liveMusicArtwork.start() - Start visualization');
         console.log('- liveMusicArtwork.stop() - Stop visualization');
-        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple, beatbackground, windbreeze)');
+        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple, beatbackground, windbreeze, leafpile)');
         console.log('- liveMusicArtwork.setColorScheme(scheme) - Set colors (celtic, fire, ocean, sunset)');
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
         console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');
@@ -676,6 +676,13 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.getDampeningSettings() - Show current dampening settings');
         console.log('- liveMusicArtwork.setWindSettings(options) - Set wind visualization parameters');
         console.log('- liveMusicArtwork.resetWindVisualization() - Reset wind visualization');
+        console.log('- liveMusicArtwork.setLeafCount(count) - Set number of leaves (10-500)');
+        console.log('- liveMusicArtwork.setLeafPhysics(options) - Set leaf physics parameters');
+        console.log('- liveMusicArtwork.setLeafWind(options) - Set leaf wind parameters');
+        console.log('- liveMusicArtwork.resetLeafPile() - Reset leaves to pile');
+        console.log('- liveMusicArtwork.gatherLeaves() - Gather all leaves to center');
+        console.log('- liveMusicArtwork.setLeafBeatResponse(options) - Set beat response parameters');
+        console.log('- liveMusicArtwork.toggleLeafBeatResponse(enabled) - Enable/disable beat response');
         
         // Add debug methods to the instance
         window.liveMusicArtwork.debugAudio = function() {
@@ -761,6 +768,70 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         };
         
+        // Add leaf pile control methods
+        window.liveMusicArtwork.setLeafCount = function(count) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setLeafCount(count);
+                console.log(`🍂 Leaf count set to: ${count}`);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.setLeafPhysics = function(settings) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setLeafPhysics(settings);
+                console.log('🍂 Leaf physics updated:', settings);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.setLeafWind = function(settings) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setLeafWind(settings);
+                console.log('🍂 Leaf wind settings updated:', settings);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.resetLeafPile = function() {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.resetLeafPile();
+                console.log('🍂 Leaf pile reset');
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.gatherLeaves = function() {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.gatherLeaves();
+                console.log('🍂 Leaves gathered to center');
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.setLeafBeatResponse = function(settings) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setLeafBeatResponse(settings);
+                console.log('🍂 Beat response settings updated:', settings);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.toggleLeafBeatResponse = function(enabled) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.toggleLeafBeatResponse(enabled);
+                console.log(`🍂 Beat response ${enabled ? 'enabled' : 'disabled'}`);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
         // Add helpful examples
         console.log('');
         console.log('🎛️ Dampening examples:');
@@ -775,6 +846,21 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.setWindSettings({turbulence: 0.2, flowSpeed: 0.05}) - More chaotic');
         console.log('- liveMusicArtwork.setWindSettings({smoothing: 0.02}) - Very smooth movement');
         console.log('- liveMusicArtwork.resetWindVisualization() - Reset all particles');
+        console.log('');
+        console.log('🍂 Leaf pile examples:');
+        console.log('- liveMusicArtwork.setLeafCount(300) - More leaves for bigger pile');
+        console.log('- liveMusicArtwork.setLeafPhysics({gravity: 0.2, airResistance: 0.95}) - Heavier leaves');
+        console.log('- liveMusicArtwork.setLeafWind({strength: 2.0, gentleness: 0.4}) - Stronger wind effect');
+        console.log('- liveMusicArtwork.setLeafPhysics({bounceRestitution: 0.8}) - Bouncier leaves');
+        console.log('- liveMusicArtwork.gatherLeaves() - Collect scattered leaves');
+        console.log('- liveMusicArtwork.resetLeafPile() - Start fresh pile');
+        console.log('');
+        console.log('🥁 Beat response examples:');
+        console.log('- liveMusicArtwork.setLeafBeatResponse({bounceForce: 12.0}) - Stronger beat bounce');
+        console.log('- liveMusicArtwork.setLeafBeatResponse({radiusMultiplier: 2.0}) - Wider beat effect');
+        console.log('- liveMusicArtwork.setLeafBeatResponse({volumeThreshold: 20}) - Higher volume needed');
+        console.log('- liveMusicArtwork.toggleLeafBeatResponse(false) - Disable beat response');
+        console.log('- liveMusicArtwork.toggleLeafBeatResponse(true) - Enable beat response');
         
     } catch (error) {
         console.error('Failed to initialize Live Music Artwork:', error);

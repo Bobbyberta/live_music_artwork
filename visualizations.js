@@ -54,6 +54,9 @@ class VisualizationEngine {
         // Wind breeze visualization instance
         this.windBreezeViz = new WindBreezeVisualization();
         
+        // Leaf pile visualization instance
+        this.leafPileViz = new LeafPileVisualization();
+        
         // Initialize animation loop
         this.animate();
     }
@@ -90,6 +93,8 @@ class VisualizationEngine {
             this.renderBeatBackground();
         } else if (this.currentMode === 'windbreeze') {
             this.renderWindBreeze();
+        } else if (this.currentMode === 'leafpile') {
+            this.renderLeafPile();
         } else {
             this.renderIdle();
         }
@@ -579,6 +584,11 @@ class VisualizationEngine {
         this.windBreezeViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
     }
 
+    renderLeafPile() {
+        // Use the leaf pile visualization
+        this.leafPileViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
+    }
+
     // Methods to control beat background colors
     setBackgroundColor(color) {
         if (this.beatBackgroundViz) {
@@ -623,6 +633,49 @@ class VisualizationEngine {
     resetWindVisualization() {
         if (this.windBreezeViz) {
             this.windBreezeViz.reset();
+        }
+    }
+
+    // Methods to control leaf pile settings
+    setLeafCount(count) {
+        if (this.leafPileViz) {
+            this.leafPileViz.setLeafCount(count);
+        }
+    }
+
+    setLeafPhysics(settings) {
+        if (this.leafPileViz) {
+            this.leafPileViz.setPhysicsSettings(settings);
+        }
+    }
+
+    setLeafWind(settings) {
+        if (this.leafPileViz) {
+            this.leafPileViz.setWindSettings(settings);
+        }
+    }
+
+    setLeafBeatResponse(settings) {
+        if (this.leafPileViz) {
+            this.leafPileViz.setBeatResponse(settings);
+        }
+    }
+
+    toggleLeafBeatResponse(enabled) {
+        if (this.leafPileViz) {
+            this.leafPileViz.toggleBeatResponse(enabled);
+        }
+    }
+
+    resetLeafPile() {
+        if (this.leafPileViz) {
+            this.leafPileViz.resetLeaves();
+        }
+    }
+
+    gatherLeaves() {
+        if (this.leafPileViz) {
+            this.leafPileViz.gatherLeaves();
         }
     }
 } 
