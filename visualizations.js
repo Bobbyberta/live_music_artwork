@@ -46,16 +46,9 @@ class VisualizationEngine {
         this.currentColorScheme = 'celtic';
         this.currentMode = 'audiotest';
         
-        // Simple pulse animation state
-        this.pulseRadius = 50;
-        this.pulseColor = '#00ff87';
-        this.particles = [];
+
         
         // Initialize all visualizations
-        this.simplePulseViz = new SimplePulseVisualization();
-        this.beatBackgroundViz = new BeatBackgroundVisualization();
-        this.windBreezeViz = new WindBreezeVisualization();
-        this.leafPileViz = new LeafPileVisualization();
         this.balloonFloatViz = new BalloonFloatVisualization();
         
         // Initialize animation loop
@@ -67,18 +60,6 @@ class VisualizationEngine {
         
         // Set the current visualization reference
         switch(mode) {
-            case 'pulse':
-                this.currentVisualization = this.simplePulseViz;
-                break;
-            case 'beat-background':
-                this.currentVisualization = this.beatBackgroundViz;
-                break;
-            case 'wind-breeze':
-                this.currentVisualization = this.windBreezeViz;
-                break;
-            case 'leaf-pile':
-                this.currentVisualization = this.leafPileViz;
-                break;
             case 'balloon-float':
                 this.currentVisualization = this.balloonFloatViz;
                 break;
@@ -110,14 +91,6 @@ class VisualizationEngine {
         
         if (this.currentMode === 'audiotest') {
             this.renderAudioTest();
-        } else if (this.currentMode === 'pulse') {
-            this.renderSimplePulse();
-        } else if (this.currentMode === 'beat-background') {
-            this.renderBeatBackground();
-        } else if (this.currentMode === 'wind-breeze') {
-            this.renderWindBreeze();
-        } else if (this.currentMode === 'leaf-pile') {
-            this.renderLeafPile();
         } else if (this.currentMode === 'balloon-float') {
             this.renderBalloonFloat();
         } else {
@@ -127,77 +100,9 @@ class VisualizationEngine {
         requestAnimationFrame(() => this.animate());
     }
 
-    renderSimplePulse() {
-        // Use the simple pulse visualization
-        this.simplePulseViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
-    }
 
-    updateParticles(midEnergy, trebleEnergy, colors) {
-        // Add new particles based on treble energy
-        if (trebleEnergy > 30 && Math.random() < 0.3) {
-            this.particles.push({
-                x: this.width / 2,
-                y: this.height / 2,
-                vx: (Math.random() - 0.5) * 8,
-                vy: (Math.random() - 0.5) * 8,
-                life: 1.0,
-                size: 2 + Math.random() * 4,
-                color: colors.secondary[Math.floor(Math.random() * colors.secondary.length)]
-            });
-        }
-        
-        // Update existing particles
-        this.particles = this.particles.filter(particle => {
-            particle.x += particle.vx;
-            particle.y += particle.vy;
-            particle.life -= 0.02;
-            particle.size *= 0.99;
-            return particle.life > 0;
-        });
-        
-        // Limit particle count
-        if (this.particles.length > 50) {
-            this.particles = this.particles.slice(-50);
-        }
-    }
 
-    drawParticles(centerX, centerY, colors) {
-        this.particles.forEach(particle => {
-            this.ctx.save();
-            this.ctx.globalAlpha = particle.life;
-            this.ctx.fillStyle = particle.color;
-            this.ctx.beginPath();
-            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.restore();
-        });
-    }
 
-    drawSimpleWaveform(colors) {
-        if (!this.audioData || !this.audioData.rawFrequencyData) return;
-        
-        const data = this.audioData.rawFrequencyData;
-        const sliceWidth = this.width / data.length;
-        const waveHeight = 60;
-        const baseY = this.height - 100;
-        
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = colors.primary[1] + '80';
-        this.ctx.lineWidth = 2;
-        
-        for (let i = 0; i < data.length; i++) {
-            const x = i * sliceWidth;
-            const y = baseY - (data[i] / 255) * waveHeight;
-            
-            if (i === 0) {
-                this.ctx.moveTo(x, y);
-            } else {
-                this.ctx.lineTo(x, y);
-            }
-        }
-        
-        this.ctx.stroke();
-    }
 
     renderAudioTest() {
         const colors = this.colorSchemes[this.currentColorScheme];
@@ -524,115 +429,22 @@ class VisualizationEngine {
         this.ctx.fillText('Select a visualization mode', this.width/2, this.height/2);
     }
 
-    renderBeatBackground() {
-        // Use the beat background visualization
-        this.beatBackgroundViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
-    }
 
-    renderWindBreeze() {
-        // Use the wind breeze visualization
-        this.windBreezeViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
-    }
 
-    renderLeafPile() {
-        // Use the leaf pile visualization
-        this.leafPileViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
-    }
+
+
+
 
     renderBalloonFloat() {
         // Use the balloon float visualization
         this.balloonFloatViz.render(this.ctx, this.audioData, this.time, this.width, this.height);
     }
 
-    // Methods to control beat background colors
-    setBackgroundColor(color) {
-        if (this.beatBackgroundViz) {
-            this.beatBackgroundViz.setBackgroundColor(color);
-        }
-    }
 
-    setBeatColor(color) {
-        if (this.beatBackgroundViz) {
-            this.beatBackgroundViz.setBeatColor(color);
-        }
-    }
 
-    // Methods to control beat background dampening
-    setDampening(options) {
-        if (this.beatBackgroundViz) {
-            this.beatBackgroundViz.setDampening(options);
-        }
-    }
 
-    toggleDampening(enabled) {
-        if (this.beatBackgroundViz) {
-            this.beatBackgroundViz.toggleDampening(enabled);
-        }
-    }
 
-    // Get current dampening settings
-    getDampeningSettings() {
-        if (this.beatBackgroundViz) {
-            return this.beatBackgroundViz.dampening;
-        }
-        return null;
-    }
 
-    // Methods to control wind breeze settings
-    setWindSettings(settings) {
-        if (this.windBreezeViz) {
-            this.windBreezeViz.setWindSettings(settings);
-        }
-    }
-
-    resetWindVisualization() {
-        if (this.windBreezeViz) {
-            this.windBreezeViz.reset();
-        }
-    }
-
-    // Methods to control leaf pile settings
-    setLeafCount(count) {
-        if (this.leafPileViz) {
-            this.leafPileViz.setLeafCount(count);
-        }
-    }
-
-    setLeafPhysics(settings) {
-        if (this.leafPileViz) {
-            this.leafPileViz.setPhysicsSettings(settings);
-        }
-    }
-
-    setLeafWind(settings) {
-        if (this.leafPileViz) {
-            this.leafPileViz.setWindSettings(settings);
-        }
-    }
-
-    setLeafBeatResponse(settings) {
-        if (this.leafPileViz) {
-            this.leafPileViz.setBeatResponse(settings);
-        }
-    }
-
-    toggleLeafBeatResponse(enabled) {
-        if (this.leafPileViz) {
-            this.leafPileViz.toggleBeatResponse(enabled);
-        }
-    }
-
-    resetLeafPile() {
-        if (this.leafPileViz) {
-            this.leafPileViz.resetLeaves();
-        }
-    }
-
-    gatherLeaves() {
-        if (this.leafPileViz) {
-            this.leafPileViz.gatherLeaves();
-        }
-    }
 
     // Methods to control balloon float settings
     setBalloonSettings(settings) {
@@ -672,24 +484,7 @@ class VisualizationEngine {
         }
     }
 
-    // Methods to control simple pulse settings
-    setPulseSettings(settings) {
-        if (this.simplePulseViz) {
-            this.simplePulseViz.setPulseSettings(settings);
-        }
-    }
 
-    setPulseColors(baseColor, pulseColor) {
-        if (this.simplePulseViz) {
-            this.simplePulseViz.setColors(baseColor, pulseColor);
-        }
-    }
-
-    resetPulse() {
-        if (this.simplePulseViz) {
-            this.simplePulseViz.reset();
-        }
-    }
 
     // Methods to control debug information display
     toggleDebugInfo(show) {
@@ -720,18 +515,6 @@ class VisualizationEngine {
         // Update bounds for all visualizations that support it
         if (this.balloonFloatViz && this.balloonFloatViz.updateBounds) {
             this.balloonFloatViz.updateBounds(width, height);
-        }
-        if (this.leafPileViz && this.leafPileViz.updateBounds) {
-            this.leafPileViz.updateBounds(width, height);
-        }
-        if (this.windBreezeViz && this.windBreezeViz.updateBounds) {
-            this.windBreezeViz.updateBounds(width, height);
-        }
-        if (this.beatBackgroundViz && this.beatBackgroundViz.updateBounds) {
-            this.beatBackgroundViz.updateBounds(width, height);
-        }
-        if (this.simplePulseViz && this.simplePulseViz.updateBounds) {
-            this.simplePulseViz.updateBounds(width, height);
         }
     }
 } 

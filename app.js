@@ -123,12 +123,7 @@ class LiveMusicArtwork {
             }
         });
         
-        // Beat color picker
-        this.beatColor.addEventListener('input', (e) => {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setBeatColor(e.target.value);
-            }
-        });
+
         
         // Fullscreen
         this.fullscreenBtn.addEventListener('click', () => {
@@ -219,14 +214,8 @@ class LiveMusicArtwork {
             this.visualizationEngine.setMode(this.visualModeSelect.value);
             this.visualizationEngine.setColorScheme(this.colorSchemeSelect.value);
             
-            // Set up color controls based on current mode
-            this.toggleColorControls(this.visualModeSelect.value === 'beatbackground');
-            
-            // If beat background mode, set the initial colors
-            if (this.visualModeSelect.value === 'beatbackground') {
-                this.visualizationEngine.setBackgroundColor(this.backgroundColor.value);
-                this.visualizationEngine.setBeatColor(this.beatColor.value);
-            }
+            // Set up color controls based on current mode (none currently supported)
+            this.toggleColorControls(false);
             
             // Start audio processing with callback
             this.audioProcessor.addCallback((audioData) => {
@@ -814,32 +803,19 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Available commands:');
         console.log('- liveMusicArtwork.start() - Start visualization');
         console.log('- liveMusicArtwork.stop() - Stop visualization');
-        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, simple, beatbackground, windbreeze, leafpile)');
+        console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, balloon-float)');
         console.log('- liveMusicArtwork.setColorScheme(scheme) - Set colors (celtic, fire, ocean, sunset)');
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
         console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');
         console.log('- liveMusicArtwork.testMicrophone() - Test microphone access manually');
-        console.log('- liveMusicArtwork.toggleDampening(enabled) - Enable/disable beat dampening');
-        console.log('- liveMusicArtwork.setDampening(options) - Set dampening parameters');
-        console.log('- liveMusicArtwork.getDampeningSettings() - Show current dampening settings');
-        console.log('- liveMusicArtwork.setWindSettings(options) - Set wind visualization parameters');
-        console.log('- liveMusicArtwork.resetWindVisualization() - Reset wind visualization');
-        console.log('- liveMusicArtwork.setLeafCount(count) - Set number of leaves (10-500)');
-        console.log('- liveMusicArtwork.setLeafPhysics(options) - Set leaf physics parameters');
-        console.log('- liveMusicArtwork.setLeafWind(options) - Set leaf wind parameters');
-        console.log('- liveMusicArtwork.resetLeafPile() - Reset leaves to pile');
-        console.log('- liveMusicArtwork.gatherLeaves() - Gather all leaves to center');
-        console.log('- liveMusicArtwork.setLeafBeatResponse(options) - Set beat response parameters');
-        console.log('- liveMusicArtwork.toggleLeafBeatResponse(enabled) - Enable/disable beat response');
+
         console.log('- liveMusicArtwork.setBalloonSettings(options) - Set balloon properties');
         console.log('- liveMusicArtwork.setBalloonBeatResponse(options) - Set balloon beat response');
         console.log('- liveMusicArtwork.setBalloonColors(options) - Set balloon color settings');
         console.log('- liveMusicArtwork.toggleBalloonBeatResponse(enabled) - Enable/disable balloon pop response');
         console.log('- liveMusicArtwork.resetBalloons() - Reset all balloons');
         console.log('- liveMusicArtwork.getBalloonMusicSpeed() - Get current music speed multiplier');
-        console.log('- liveMusicArtwork.setPulseSettings(options) - Set pulse size and smoothing');
-        console.log('- liveMusicArtwork.setPulseColors(baseColor, pulseColor) - Set pulse colors');
-        console.log('- liveMusicArtwork.resetPulse() - Reset pulse visualization');
+
         console.log('- liveMusicArtwork.toggleDebugInfo(true/false) - Show/hide debug information');
         console.log('- liveMusicArtwork.getDebugInfoState() - Check if debug info is currently shown');
         
@@ -878,118 +854,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         };
         
-        // Add dampening control methods
-        window.liveMusicArtwork.toggleDampening = function(enabled) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.toggleDampening(enabled);
-                console.log(`🎛️ Dampening ${enabled ? 'enabled' : 'disabled'}`);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.setDampening = function(options) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setDampening(options);
-                console.log('🎛️ Dampening settings updated:', options);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.getDampeningSettings = function() {
-            if (this.visualizationEngine) {
-                const settings = this.visualizationEngine.getDampeningSettings();
-                console.log('🎛️ Current dampening settings:', settings);
-                return settings;
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-                return null;
-            }
-        };
-        
-        // Add wind control methods
-        window.liveMusicArtwork.setWindSettings = function(settings) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setWindSettings(settings);
-                console.log('🌬️ Wind settings updated:', settings);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.resetWindVisualization = function() {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.resetWindVisualization();
-                console.log('🌬️ Wind visualization reset');
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        // Add leaf pile control methods
-        window.liveMusicArtwork.setLeafCount = function(count) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setLeafCount(count);
-                console.log(`🍂 Leaf count set to: ${count}`);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.setLeafPhysics = function(settings) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setLeafPhysics(settings);
-                console.log('🍂 Leaf physics updated:', settings);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.setLeafWind = function(settings) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setLeafWind(settings);
-                console.log('🍂 Leaf wind settings updated:', settings);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.resetLeafPile = function() {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.resetLeafPile();
-                console.log('🍂 Leaf pile reset');
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.gatherLeaves = function() {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.gatherLeaves();
-                console.log('🍂 Leaves gathered to center');
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.setLeafBeatResponse = function(settings) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setLeafBeatResponse(settings);
-                console.log('🍂 Beat response settings updated:', settings);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.toggleLeafBeatResponse = function(enabled) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.toggleLeafBeatResponse(enabled);
-                console.log(`🍂 Beat response ${enabled ? 'enabled' : 'disabled'}`);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
+
         
         // Balloon float control methods
         window.liveMusicArtwork.setBalloonSettings = function(settings) {
@@ -1043,30 +908,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         };
         
-        // Simple pulse control methods
-        window.liveMusicArtwork.setPulseSettings = function(settings) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setPulseSettings(settings);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.setPulseColors = function(baseColor, pulseColor) {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setPulseColors(baseColor, pulseColor);
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
-        
-        window.liveMusicArtwork.resetPulse = function() {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.resetPulse();
-            } else {
-                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
-            }
-        };
+
         
         // Debug control methods
         window.liveMusicArtwork.toggleDebugInfo = function(show) {
@@ -1091,34 +933,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         // Add helpful examples
         console.log('');
-        console.log('🎛️ Dampening examples:');
-        console.log('- liveMusicArtwork.toggleDampening(true) - Enable dampening');
-        console.log('- liveMusicArtwork.setDampening({maxIntensity: 0.5, decayRate: 0.9}) - Gentle flash');
-        console.log('- liveMusicArtwork.setDampening({maxIntensity: 0.9, decayRate: 0.85}) - Strong flash');
-        console.log('- liveMusicArtwork.setDampening({smoothingFactor: 0.05}) - Very smooth transitions');
-        console.log('');
-        console.log('🌬️ Wind examples:');
-        console.log('- liveMusicArtwork.setWindSettings({strength: 1.0, gentleness: 0.8}) - Gentle breeze');
-        console.log('- liveMusicArtwork.setWindSettings({strength: 2.0, gentleness: 0.5}) - Strong wind');
-        console.log('- liveMusicArtwork.setWindSettings({turbulence: 0.2, flowSpeed: 0.05}) - More chaotic');
-        console.log('- liveMusicArtwork.setWindSettings({smoothing: 0.02}) - Very smooth movement');
-        console.log('- liveMusicArtwork.resetWindVisualization() - Reset all particles');
-        console.log('');
-        console.log('🍂 Leaf pile examples:');
-        console.log('- liveMusicArtwork.setLeafCount(300) - More leaves for bigger pile');
-        console.log('- liveMusicArtwork.setLeafPhysics({gravity: 0.2, airResistance: 0.95}) - Heavier leaves');
-        console.log('- liveMusicArtwork.setLeafWind({strength: 2.0, gentleness: 0.4}) - Stronger wind effect');
-        console.log('- liveMusicArtwork.setLeafPhysics({bounceRestitution: 0.8}) - Bouncier leaves');
-        console.log('- liveMusicArtwork.gatherLeaves() - Collect scattered leaves');
-        console.log('- liveMusicArtwork.resetLeafPile() - Start fresh pile');
-        console.log('');
-        console.log('🥁 Beat response examples:');
-        console.log('- liveMusicArtwork.setLeafBeatResponse({bounceForce: 12.0}) - Stronger beat bounce');
-        console.log('- liveMusicArtwork.setLeafBeatResponse({radiusMultiplier: 2.0}) - Wider beat effect');
-        console.log('- liveMusicArtwork.setLeafBeatResponse({volumeThreshold: 20}) - Higher volume needed');
-        console.log('- liveMusicArtwork.toggleLeafBeatResponse(false) - Disable beat response');
-        console.log('- liveMusicArtwork.toggleLeafBeatResponse(true) - Enable beat response');
-        console.log('');
+
         console.log('🎈 Balloon examples:');
         console.log('- liveMusicArtwork.setBalloonSettings({baseSize: 80, sizeVariance: 30, spawnRate: 0.6}) - Bigger balloons, more frequent spawning');
         console.log('- liveMusicArtwork.setBalloonBeatResponse({volumeThreshold: 20, cooldownTime: 60}) - Adjust beat response sensitivity');
@@ -1129,11 +944,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.resetBalloons() - Reset all balloons');
         console.log('Note: Balloons now pop on EVERY detected beat (if visible), speed responds to music tempo');
         console.log('');
-        console.log('🎵 Simple Pulse examples:');
-        console.log('- liveMusicArtwork.setPulseSettings({maxSize: 200, minSize: 80, smoothing: 0.15}) - Bigger, smoother pulse');
-        console.log('- liveMusicArtwork.setPulseColors({r: 255, g: 0, b: 0}, {r: 0, g: 255, b: 0}) - Red to green pulse');
-        console.log('- liveMusicArtwork.resetPulse() - Reset pulse to default');
-        console.log('');
+
         console.log('🐛 Debug Control examples:');
         console.log('- liveMusicArtwork.toggleDebugInfo(false) - Hide all debug information');
         console.log('- liveMusicArtwork.toggleDebugInfo(true) - Show debug information');
