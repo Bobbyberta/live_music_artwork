@@ -11,7 +11,7 @@ class LiveMusicArtwork {
         this.sensitivitySlider = null;
         this.sensitivityValue = null;
         this.visualModeSelect = null;
-        this.colorSchemeSelect = null;
+
         this.micStatus = null;
         this.audioLevel = null;
         this.fullscreenBtn = null;
@@ -55,7 +55,7 @@ class LiveMusicArtwork {
         this.sensitivitySlider = document.getElementById('sensitivity');
         this.sensitivityValue = document.getElementById('sensitivityValue');
         this.visualModeSelect = document.getElementById('visualMode');
-        this.colorSchemeSelect = document.getElementById('colorScheme');
+
         this.troubleshootBtn = document.getElementById('troubleshootBtn');
         this.debugToggleBtn = document.getElementById('debugToggleBtn');
         this.fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -64,9 +64,7 @@ class LiveMusicArtwork {
         this.audioLevel = document.getElementById('audioLevel');
         this.frequencyDisplay = document.getElementById('frequency');
         this.volumeDisplay = document.getElementById('volume');
-        this.backgroundColor = document.getElementById('backgroundColor');
-        this.beatColor = document.getElementById('beatColor');
-        this.colorControls = document.getElementById('colorControls');
+
         
         // State
         this.isFullscreen = false;
@@ -77,9 +75,9 @@ class LiveMusicArtwork {
         
         // Verify all elements exist
         if (!this.startBtn || !this.stopBtn || !this.canvas || !this.sensitivitySlider || 
-            !this.visualModeSelect || !this.colorSchemeSelect || !this.debugToggleBtn ||
-            !this.micStatus || !this.audioLevel || !this.fullscreenBtn || !this.fullscreenExitBtn || !this.canvas ||
-            !this.frequencyDisplay || !this.volumeDisplay || !this.backgroundColor || !this.beatColor) {
+            !this.visualModeSelect || !this.debugToggleBtn ||
+            !this.micStatus || !this.audioLevel || !this.fullscreenBtn || !this.fullscreenExitBtn ||
+            !this.frequencyDisplay || !this.volumeDisplay) {
             console.error('❌ Some DOM elements are missing');
             return;
         }
@@ -105,23 +103,10 @@ class LiveMusicArtwork {
             
             this.updateVisualizationMode(mode);
             
-            // Show/hide color controls based on mode
-            this.toggleColorControls(mode === 'beat-background');
+
         });
         
-        // Color scheme
-        this.colorSchemeSelect.addEventListener('change', (e) => {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setColorScheme(e.target.value);
-            }
-        });
-        
-        // Background color picker
-        this.backgroundColor.addEventListener('input', (e) => {
-            if (this.visualizationEngine) {
-                this.visualizationEngine.setBackgroundColor(e.target.value);
-            }
-        });
+
         
 
         
@@ -212,10 +197,6 @@ class LiveMusicArtwork {
             // Initialize visualization engine
             this.visualizationEngine = new VisualizationEngine(this.canvas);
             this.visualizationEngine.setMode(this.visualModeSelect.value);
-            this.visualizationEngine.setColorScheme(this.colorSchemeSelect.value);
-            
-            // Set up color controls based on current mode (none currently supported)
-            this.toggleColorControls(false);
             
             // Start audio processing with callback
             this.audioProcessor.addCallback((audioData) => {
@@ -384,11 +365,7 @@ class LiveMusicArtwork {
         }
     }
 
-    toggleColorControls(show) {
-        if (this.colorControls) {
-            this.colorControls.style.display = show ? 'flex' : 'none';
-        }
-    }
+
 
     updateVisualizationMode(mode) {
         // Update visualization mode if engine is running
@@ -491,12 +468,7 @@ class LiveMusicArtwork {
         }
     }
 
-    setColorScheme(scheme) {
-        if (this.colorSchemeSelect) {
-            this.colorSchemeSelect.value = scheme;
-            this.colorSchemeSelect.dispatchEvent(new Event('change'));
-        }
-    }
+
 
     setSensitivity(value) {
         if (this.sensitivitySlider) {
@@ -804,7 +776,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.start() - Start visualization');
         console.log('- liveMusicArtwork.stop() - Stop visualization');
         console.log('- liveMusicArtwork.setVisualizationMode(mode) - Set mode (audiotest, balloon-float)');
-        console.log('- liveMusicArtwork.setColorScheme(scheme) - Set colors (celtic, fire, ocean, sunset)');
+
         console.log('- liveMusicArtwork.setSensitivity(1-10) - Set audio sensitivity');
         console.log('- liveMusicArtwork.debugAudio() - Show audio debug information');
         console.log('- liveMusicArtwork.testMicrophone() - Test microphone access manually');
