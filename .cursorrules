@@ -1,0 +1,138 @@
+# Live Music Artwork - Cursor Rules
+
+## Project Overview
+This is a real-time audio visualization application specifically designed for Celtic/Ceilidh music performances. It captures microphone input using the Web Audio API and creates responsive visualizations that dance with traditional instruments like fiddles, flutes, bodhrán, and pipes.
+
+## Project Architecture
+
+### Core Components
+- **app.js**: Main application controller with UI management and orchestration
+- **audio.js**: Web Audio API processor with FFT analysis and Celtic music optimization
+- **visualizations.js**: Graphics rendering engine with multiple visualization modes
+- **visualization-template.js**: Template and examples for creating new visualization types
+- **Individual visualization files**: Separate files for each visualization type (beat-background.js, simple-pulse.js, etc.)
+
+### Key Technologies
+- Vanilla JavaScript (ES6+)
+- Web Audio API with 1024-point FFT
+- Canvas 2D API for graphics
+- CSS3 for Celtic-inspired UI
+- Real-time audio processing at ~60 FPS
+
+## Development Guidelines
+
+### Audio Processing Rules
+- Always use Float32Array for precise frequency analysis
+- FFT size: 1024 bins, smoothing: 0.8
+- Frequency ranges optimized for Celtic instruments:
+  - Bass (20-200 Hz): Bodhrán, low strings
+  - Mid (200-2000 Hz): Core instrument range
+  - Treble (2000-8000 Hz): High strings, flute
+  - High (8000+ Hz): Harmonics, breath sounds
+- Beat detection tuned for traditional Celtic rhythms
+- Include error handling for microphone access failures
+
+### Visualization Development
+- Each new visualization type should be in its own file for better manageability
+- Use the visualization-template.js as a starting point
+- Always handle the "no audio" state gracefully
+- Include dampening for smooth color transitions, especially for beat effects
+- Test visualizations with actual Celtic music recordings
+- Color schemes should follow Celtic themes (greens, golds, blues, amber)
+
+### Code Patterns
+- Use ES6 classes for main components
+- Implement callback systems for audio data distribution
+- Include comprehensive error handling and user feedback
+- Add fullscreen support for live performances
+- Implement keyboard shortcuts (Space, Escape, F11)
+- Use semantic variable names reflecting musical concepts
+
+### Audio Data Structure
+When working with audio data, expect these properties:
+```javascript
+audioData = {
+    volume: 0-100,           // Overall volume level
+    bassEnergy: 0-100,       // Low frequency energy
+    midEnergy: 0-100,        // Mid frequency energy  
+    trebleEnergy: 0-100,     // High frequency energy
+    highEnergy: 0-100,       // Very high frequency energy
+    dominantFrequency: Hz,   // Strongest frequency
+    dominantNote: "C"|"F#",  // Musical note
+    beatDetected: boolean,   // Beat detection
+    rawFrequencyData: Uint8Array, // FFT data
+    sensitivity: 1-10        // User sensitivity setting
+}
+```
+
+### UI/UX Guidelines
+- Prioritize accessibility for live performance environments
+- Include comprehensive troubleshooting and setup guidance
+- Audio Test mode should be the default for initial setup
+- Show clear status indicators for microphone and audio processing
+- Provide real-time feedback for volume levels and frequency analysis
+- Include fullscreen mode optimized for 900x600 canvas
+
+### Performance Requirements
+- Maintain 60 FPS rendering
+- Adaptive particle counts based on performance
+- Automatic pause when browser tab is hidden
+- Memory-efficient audio buffer management
+- Graceful degradation on lower-end devices
+
+### Celtic Music Optimization
+- Recognize and respond to traditional instrument frequency ranges
+- Implement beat detection suitable for jigs, reels, and hornpipes
+- Color schemes inspired by Irish/Scottish traditions
+- Consider the call-and-response nature of session music
+- Optimize for acoustic instruments (not electronic)
+
+### Error Handling Standards
+- Comprehensive microphone permission handling
+- Fallback for basic audio constraints if advanced ones fail
+- Clear user feedback for common issues (permissions, device conflicts)
+- Automatic retry mechanisms for temporary audio failures
+- Debug information available but not intrusive
+
+### File Organization
+- Keep visualization logic separate from audio processing
+- Use meaningful filenames that reflect visualization style
+- Include comprehensive comments for musical and technical concepts
+- Maintain consistency in coding style across all modules
+
+### Testing Approach
+- Test each visualization type individually before integration
+- Verify with actual Celtic music instruments and recordings
+- Check performance across different browsers and devices
+- Validate fullscreen behavior for live performance scenarios
+- Test error recovery scenarios (microphone disconnect, permission changes)
+
+### Browser Compatibility
+- Support Chrome 66+, Firefox 60+, Safari 14+, Edge 79+
+- Handle Web Audio API vendor prefixes
+- Include HTTPS/localhost checks for microphone access
+- Graceful feature detection and fallbacks
+
+## Common Development Tasks
+
+### Adding New Visualizations
+1. Copy visualization-template.js as a starting point
+2. Create new file with descriptive name (e.g., spiral-dance.js)
+3. Add option to index.html select element
+4. Integrate in visualizations.js animate() method
+5. Test with various Celtic music styles
+
+### Debugging Audio Issues
+- Use Audio Test mode for comprehensive diagnosis
+- Check browser console for detailed audio pipeline logging
+- Verify microphone permissions and device availability
+- Test with different audio input devices
+- Monitor frequency analysis and beat detection accuracy
+
+### Performance Optimization
+- Profile canvas rendering performance
+- Optimize particle systems and animation loops
+- Consider adaptive quality settings for lower-end devices
+- Monitor memory usage during extended sessions
+
+Remember: This project is optimized for live Celtic music performance environments. Always consider the musical context and traditional instrument characteristics when developing new features. 
