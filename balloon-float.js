@@ -19,7 +19,7 @@ class BalloonFloatVisualization {
             enabled: true,
             volumeThreshold: 12,     // Minimum volume for pop
             lastBeatTime: 0,
-            cooldownTime: 10         // Minimum time between pops
+            cooldownTime: 60         // Minimum time between pops (60FPS)
         };
         
         // Color settings based on music
@@ -57,6 +57,20 @@ class BalloonFloatVisualization {
         this.beatPopOccurred = false;
         this.lastBeatDetected = false;
         this.lastPopInfo = null;
+        
+        // Volume spike detection
+        this.volumeHistory = [];
+        this.maxHistoryLength = 120; // 2 seconds at 60fps
+        this.averageVolume = 0;
+        this.spikeSettings = {
+            enabled: true,
+            minSpikeThreshold: 1.5,   // Minimum spike multiplier (1.5x average)
+            maxSpikeThreshold: 3.0,   // Maximum spike multiplier for max balloons
+            minBalloonsPerSpike: 1,   // Minimum balloons to pop
+            maxBalloonsPerSpike: 8,   // Maximum balloons to pop at once
+            cooldownTime: 100,        // Minimum time between spike detections (ms)
+            lastSpikeTime: 0
+        };
         
         // Debug info toggle
         this.showDebugInfo = true;
@@ -164,6 +178,99 @@ class BalloonFloatVisualization {
                                    (audioData.trebleEnergy || 0) * smoothing;
         this.smoothedAudio.frequency = this.smoothedAudio.frequency * (1 - smoothing) + 
                                       (audioData.dominantFrequency || 440) * smoothing;
+        
+        // Update volume history for spike detection
+        this.updateVolumeHistory(audioData.volume);
+    }
+    
+    updateVolumeHistory(currentVolume) {
+        // Add current volume to history
+        this.volumeHistory.push(currentVolume);
+        
+        // Keep history within limit
+        if (this.volumeHistory.length > this.maxHistoryLength) {
+            this.volumeHistory.shift();
+        }
+        
+        // Calculate rolling average
+        if (this.volumeHistory.length > 10) { // Need some data before calculating average
+            const sum = this.volumeHistory.reduce((a, b) => a + b, 0);
+            this.averageVolume = sum / this.volumeHistory.length;
+        }
+    }
+    
+    handleVolumeSpike(audioData) {
+        if (!this.spikeSettings.enabled || !audioData || this.balloons.length === 0) return 0;
+        
+        const currentTime = Date.now();
+        const timeSinceLastSpike = currentTime - this.spikeSettings.lastSpikeTime;
+        const currentVolume = audioData.volume;
+        
+        // Need enough history to have a reliable average
+        if (this.volumeHistory.length < 30 || this.averageVolume < 1) return 0;
+        
+        // Check if we're in cooldown period
+        if (timeSinceLastSpike < this.spikeSettings.cooldownTime) return 0;
+        
+        // Calculate spike magnitude
+        const spikeRatio = currentVolume / this.averageVolume;
+        
+        // Check if this qualifies as a spike
+        if (spikeRatio < this.spikeSettings.minSpikeThreshold) return 0;
+        
+        // Calculate how many balloons to pop based on spike magnitude
+        const normalizedSpike = Math.min(
+            (spikeRatio - this.spikeSettings.minSpikeThreshold) / 
+            (this.spikeSettings.maxSpikeThreshold - this.spikeSettings.minSpikeThreshold),
+            1.0
+        );
+        
+        const balloonsToPopFloat = this.spikeSettings.minBalloonsPerSpike + 
+            (normalizedSpike * (this.spikeSettings.maxBalloonsPerSpike - this.spikeSettings.minBalloonsPerSpike));
+        const balloonsToPopCount = Math.ceil(balloonsToPopFloat);
+        
+        // Get visible balloons
+        const visibleBalloons = this.balloons.filter(balloon => this.isBalloonVisible(balloon));
+        const actualBalloonsToPop = Math.min(balloonsToPopCount, visibleBalloons.length);
+        
+        if (actualBalloonsToPop > 0) {
+            this.spikeSettings.lastSpikeTime = currentTime;
+            
+            // Update debug info
+            this.lastPopInfo = {
+                type: 'spike',
+                totalBalloons: this.balloons.length,
+                visibleBalloons: visibleBalloons.length,
+                volume: currentVolume.toFixed(1),
+                averageVolume: this.averageVolume.toFixed(1),
+                spikeRatio: spikeRatio.toFixed(2),
+                balloonsPopped: actualBalloonsToPop,
+                timeSinceLastPop: timeSinceLastSpike
+            };
+            
+            // Pop the balloons
+            for (let i = 0; i < actualBalloonsToPop; i++) {
+                if (visibleBalloons.length === 0) break;
+                
+                // Select a random visible balloon
+                const randomIndex = Math.floor(Math.random() * visibleBalloons.length);
+                const balloonToPop = visibleBalloons[randomIndex];
+                const balloonIndex = this.balloons.indexOf(balloonToPop);
+                
+                // Create pop effect
+                this.createPopEffect(balloonToPop);
+                
+                // Remove the balloon
+                this.balloons.splice(balloonIndex, 1);
+                
+                // Remove from visible balloons array so we don't pop the same balloon twice
+                visibleBalloons.splice(randomIndex, 1);
+            }
+            
+            return actualBalloonsToPop;
+        }
+        
+        return 0;
     }
     
     handleBeatResponse(audioData) {
@@ -417,8 +524,14 @@ class BalloonFloatVisualization {
         // Calculate music speed once per frame
         this.currentMusicSpeed = this.calculateMusicSpeed();
         
-        // Handle beat response
-        this.beatPopOccurred = this.handleBeatResponse(audioData);
+        // Handle volume spike detection (primary popping mechanism)
+        const balloonsPopped = this.handleVolumeSpike(audioData);
+        this.beatPopOccurred = balloonsPopped > 0;
+        
+        // Also handle beat response (secondary/backup popping mechanism)
+        if (!this.beatPopOccurred) {
+            this.beatPopOccurred = this.handleBeatResponse(audioData);
+        }
         
         // Update balloon positions
         this.updateBalloons();
@@ -583,11 +696,32 @@ class BalloonFloatVisualization {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.fillText(`Visible Balloons: ${visibleBalloons.length}`, 20, 220);
         
+        // Volume spike detection info
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillText(`Avg Volume: ${this.averageVolume.toFixed(1)}%`, 20, 240);
+        
+        if (audioData.volume > 0 && this.averageVolume > 0) {
+            const currentSpike = audioData.volume / this.averageVolume;
+            const spikeColor = currentSpike >= this.spikeSettings.minSpikeThreshold ? 
+                'rgba(255, 100, 100, 0.9)' : 'rgba(255, 255, 255, 0.6)';
+            ctx.fillStyle = spikeColor;
+            ctx.fillText(`Spike Ratio: ${currentSpike.toFixed(2)}x (need ${this.spikeSettings.minSpikeThreshold}x)`, 20, 260);
+        }
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillText(`Volume History: ${this.volumeHistory.length}/${this.maxHistoryLength}`, 20, 280);
+        
         // Show debug info from last pop
         if (this.lastPopInfo) {
-            ctx.fillStyle = 'rgba(255, 255, 100, 0.8)';
-            ctx.fillText(`Last Pop: Vol=${this.lastPopInfo.volume}% Time=${this.lastPopInfo.timeSinceLastPop}ms`, 20, 240);
-            ctx.fillText(`Balloons: ${this.lastPopInfo.totalBalloons} total, ${this.lastPopInfo.visibleBalloons} visible`, 20, 260);
+            if (this.lastPopInfo.type === 'spike') {
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+                ctx.fillText(`SPIKE POP: ${this.lastPopInfo.balloonsPopped} balloons (${this.lastPopInfo.spikeRatio}x spike)`, 20, 300);
+                ctx.fillText(`Vol: ${this.lastPopInfo.volume}% vs Avg: ${this.lastPopInfo.averageVolume}%`, 20, 320);
+            } else {
+                ctx.fillStyle = 'rgba(255, 255, 100, 0.8)';
+                ctx.fillText(`Beat Pop: Vol=${this.lastPopInfo.volume}% Time=${this.lastPopInfo.timeSinceLastPop}ms`, 20, 300);
+                ctx.fillText(`Balloons: ${this.lastPopInfo.totalBalloons} total, ${this.lastPopInfo.visibleBalloons} visible`, 20, 320);
+            }
         }
         
         // Show cooldown time warning if very low
@@ -611,12 +745,17 @@ class BalloonFloatVisualization {
             ctx.fillText('🎵 MODERATE TEMPO', width - 20, 30);
         }
         
-        // Show beat pop indicator in top-right
+        // Show pop indicator in top-right
         if (this.beatPopOccurred) {
             ctx.fillStyle = 'rgba(255, 100, 100, 1.0)';
             ctx.font = 'bold 18px Arial';
             ctx.textAlign = 'right';
-            ctx.fillText('🎈💥 BALLOON POP!', width - 20, 60);
+            
+            if (this.lastPopInfo && this.lastPopInfo.type === 'spike' && this.lastPopInfo.balloonsPopped > 1) {
+                ctx.fillText(`🎈💥 ${this.lastPopInfo.balloonsPopped}x SPIKE POP!`, width - 20, 60);
+            } else {
+                ctx.fillText('🎈💥 BALLOON POP!', width - 20, 60);
+            }
         }
     }
     
@@ -628,6 +767,18 @@ class BalloonFloatVisualization {
     setBeatResponse(settings) {
         // Note: popChance is no longer used - balloons pop on every detected beat
         this.beatResponse = { ...this.beatResponse, ...settings };
+    }
+    
+    setSpikeSettings(settings) {
+        this.spikeSettings = { ...this.spikeSettings, ...settings };
+    }
+    
+    getSpikeSettings() {
+        return { ...this.spikeSettings };
+    }
+    
+    toggleSpikeDetection(enabled) {
+        this.spikeSettings.enabled = enabled;
     }
     
     // Note: Balloons now get fixed colors at creation time based on music

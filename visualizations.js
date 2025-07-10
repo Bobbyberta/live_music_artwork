@@ -483,6 +483,25 @@ class VisualizationEngine {
             this.balloonFloatViz.resetBalloons();
         }
     }
+    
+    setSpikeSettings(settings) {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.setSpikeSettings(settings);
+        }
+    }
+    
+    getSpikeSettings() {
+        if (this.balloonFloatViz) {
+            return this.balloonFloatViz.getSpikeSettings();
+        }
+        return null;
+    }
+    
+    toggleSpikeDetection(enabled) {
+        if (this.balloonFloatViz) {
+            this.balloonFloatViz.toggleSpikeDetection(enabled);
+        }
+    }
 
 
 

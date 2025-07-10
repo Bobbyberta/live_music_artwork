@@ -787,6 +787,9 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.toggleBalloonBeatResponse(enabled) - Enable/disable balloon pop response');
         console.log('- liveMusicArtwork.resetBalloons() - Reset all balloons');
         console.log('- liveMusicArtwork.getBalloonMusicSpeed() - Get current music speed multiplier');
+        console.log('- liveMusicArtwork.setSpikeSettings(options) - Set volume spike detection settings');
+        console.log('- liveMusicArtwork.getSpikeSettings() - Get current spike detection settings');
+        console.log('- liveMusicArtwork.toggleSpikeDetection(enabled) - Enable/disable spike detection');
 
         console.log('- liveMusicArtwork.toggleDebugInfo(true/false) - Show/hide debug information');
         console.log('- liveMusicArtwork.getDebugInfoState() - Check if debug info is currently shown');
@@ -880,6 +883,35 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         };
         
+        window.liveMusicArtwork.setSpikeSettings = function(settings) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.setSpikeSettings(settings);
+                console.log('🔊 Spike detection settings updated:', settings);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
+        window.liveMusicArtwork.getSpikeSettings = function() {
+            if (this.visualizationEngine) {
+                const settings = this.visualizationEngine.getSpikeSettings();
+                console.log('🔊 Current spike detection settings:', settings);
+                return settings;
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+                return null;
+            }
+        };
+        
+        window.liveMusicArtwork.toggleSpikeDetection = function(enabled) {
+            if (this.visualizationEngine) {
+                this.visualizationEngine.toggleSpikeDetection(enabled);
+                console.log(`🔊 Spike detection ${enabled ? 'enabled' : 'disabled'}`);
+            } else {
+                console.log('⚠️ Visualization engine not initialized. Start the visualization first.');
+            }
+        };
+        
 
         
         // Debug control methods
@@ -914,7 +946,15 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('- liveMusicArtwork.toggleBalloonBeatResponse(false) - Disable balloon beat response');
         console.log('- liveMusicArtwork.toggleBalloonBeatResponse(true) - Enable balloon beat response');
         console.log('- liveMusicArtwork.resetBalloons() - Reset all balloons');
-        console.log('Note: Balloons now pop on EVERY detected beat (if visible), speed responds to music tempo');
+        console.log('Note: Balloons pop on volume spikes (primary) and beats (secondary), speed responds to music tempo');
+        console.log('');
+        console.log('🔊 Volume Spike Detection examples:');
+        console.log('- liveMusicArtwork.setSpikeSettings({minSpikeThreshold: 2.0}) - Require bigger spikes to pop balloons');
+        console.log('- liveMusicArtwork.setSpikeSettings({maxBalloonsPerSpike: 12}) - Pop up to 12 balloons on huge spikes');
+        console.log('- liveMusicArtwork.setSpikeSettings({cooldownTime: 200}) - Slower spike detection (200ms between spikes)');
+        console.log('- liveMusicArtwork.setSpikeSettings({cooldownTime: 50}) - Faster spike detection (50ms between spikes)');
+        console.log('- liveMusicArtwork.toggleSpikeDetection(false) - Disable spike detection (use beat detection only)');
+        console.log('- liveMusicArtwork.getSpikeSettings() - Check current spike detection settings');
         console.log('');
 
         console.log('🐛 Debug Control examples:');
