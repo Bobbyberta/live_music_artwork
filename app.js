@@ -197,6 +197,7 @@ class LiveMusicArtwork {
             // Initialize visualization engine
             this.visualizationEngine = new VisualizationEngine(this.canvas);
             this.visualizationEngine.setMode(this.visualModeSelect.value);
+            this.visualizationEngine.start();
             
             // Start audio processing with callback
             this.audioProcessor.addCallback((audioData) => {
@@ -226,11 +227,9 @@ class LiveMusicArtwork {
             this.audioProcessor = null;
         }
         
-        // Clear canvas
-        if (this.canvas) {
-            const ctx = this.canvas.getContext('2d');
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.visualizationEngine) {
+            this.visualizationEngine.stop();
+            this.visualizationEngine = null;
         }
         
         this.isRunning = false;

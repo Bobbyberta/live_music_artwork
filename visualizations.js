@@ -7,6 +7,10 @@ class VisualizationEngine {
         this.width = canvas.width;
         this.height = canvas.height;
         
+        // Animation state
+        this.isRunning = false;
+        this.animationId = null;
+        
         // Audio data
         this.audioData = null;
         
@@ -51,8 +55,7 @@ class VisualizationEngine {
         // Initialize all visualizations
         this.balloonFloatViz = new BalloonFloatVisualization();
         
-        // Initialize animation loop
-        this.animate();
+        // Animation loop is now controlled by start() and stop() methods
     }
 
     setMode(mode) {
@@ -87,6 +90,8 @@ class VisualizationEngine {
     }
 
     animate() {
+        if (!this.isRunning) return;
+        
         this.time += 0.016; // ~60fps
         
         if (this.currentMode === 'audiotest') {
@@ -97,7 +102,26 @@ class VisualizationEngine {
             this.renderIdle();
         }
         
-        requestAnimationFrame(() => this.animate());
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    start() {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.animate();
+        }
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear the canvas
+        this.ctx.fillStyle = '#1a1a2e';
+        this.ctx.fillRect(0, 0, this.width, this.height);
     }
 
 
