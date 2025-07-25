@@ -73,7 +73,7 @@ Real-time audio visualization specifically designed for Celtic music performance
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/live_music_artwork.git
+   git clone https://github.com/bobbyberta/live_music_artwork.git
    cd live_music_artwork
    ```
 
