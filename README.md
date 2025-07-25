@@ -98,6 +98,9 @@ Real-time audio visualization specifically designed for Celtic music performance
 4. **Grant microphone permissions**
    Click "Start Visualization" and allow microphone access when prompted
 
+5. **Need to keep your mac awake for the party?**
+   # caffeinate -t 7200
+
 ## 🎮 Usage
 
 ### Basic Operation
